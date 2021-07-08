@@ -1,0 +1,53 @@
+version: '3.4'
+services:
+  kafka:
+    image: lensesio/fast-data-dev:latest
+    ports:
+      - 2181:2181
+      - 3030:3030
+      - 8081-8083:8081-8083
+      - 9581-9585:9581-9585
+      - 9092:9092
+    volumes:
+    - ./kafkadata:/data
+    environment:
+      ADV_HOST: localhost # If running application from IDE
+#      ADV_HOST: kafka # If running application through docker-compose
+      SAMPLEDATA: 0
+      RUNNING_SAMPLEDATA: 0
+      RUNTESTS: 0
+      KAFKA_MAX_BLOCK_MS: 10000
+      KAFKA_LOG_CLEANUP_POLICY: compact
+  database_henvendelse:
+    build:
+      context: .
+      dockerfile: postgresql/henvendelse/Dockerfile
+    ports:
+    - 7060:5432
+    volumes:
+    - ./pgdata_henvendelse:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: henvendelse
+      POSTGRES_PASSWORD: henvendelse
+      POSTGRES_DATABASE: henvendelse
+  database_henvendelsearkiv:
+    build:
+      context: .
+      dockerfile: postgresql/henvendelsearkiv/Dockerfile
+    ports:
+      - 7061:5432
+    volumes:
+      - ./pgdata_henvendelsearkiv:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: henvendelsearkiv
+      POSTGRES_PASSWORD: henvendelsearkiv
+      POSTGRES_DATABASE: henvendelsearkiv
+#  app:
+#    build:
+#      context: .
+#      dockerfile: Dockerfile
+#      network: host
+#    ports:
+#      - 7075:7075
+#    environment:
+#      KAFKA_BOOTSTRAP_SERVERS: kafka:9092

@@ -1,0 +1,61 @@
+name: Build, push, and deploy
+
+on:
+  push:
+    paths-ignore:
+      - '.nais/**/*-topic.yaml'
+      - 'README.md'
+      - 'Docker-compose.yaml'
+
+env:
+  IMAGE: docker.pkg.github.com/${{ github.repository }}/henvendelse-kafka-migrator:${{ github.sha }}
+  CI: true
+  TZ: Europe/Oslo
+
+jobs:
+  build:
+    name: Test and build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - name: Set up JDK 11
+        uses: actions/setup-java@v1
+        with:
+          java-version: 11
+      - uses: actions/cache@v1
+        with:
+          path: ~/.gradle
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/build.gradle.kts') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+          continue-on-error: true
+      - name: Build
+        run:  ./gradlew build
+      - name: Publish docker image
+        if: github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/master'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          docker build --tag ${IMAGE} .
+          docker login docker.pkg.github.com -u ${GITHUB_REPOSITORY} -p ${GITHUB_TOKEN}
+          docker push ${IMAGE}
+      - name: Deploy preprod
+        if: github.ref == 'refs/heads/dev'
+        uses: nais/deploy/actions/deploy@v1
+        env:
+          APIKEY: ${{ secrets.NAIS_DEPLOY_APIKEY }}
+          PRINT_PAYLOAD: true
+          CLUSTER: dev-fss
+          RESOURCE: .nais/application.yaml
+          VARS: .nais/vars/preprod.yaml
+          DRY_RUN: true
+      - name: Deploy prod
+        if: github.ref == 'refs/heads/master'
+        uses: nais/deploy/actions/deploy@v1
+        env:
+          APIKEY: ${{ secrets.NAIS_DEPLOY_APIKEY }}
+          PRINT_PAYLOAD: true
+          CLUSTER: prod-fss
+          RESOURCE: .nais/application.yaml
+          VARS: .nais/vars/prod.yaml
+          DRY_RUN: true

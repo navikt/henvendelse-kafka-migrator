@@ -1,0 +1,8 @@
+domene: "dev.intern.nav.no"
+environment: "q0"
+kafka:
+  pool: "nav-dev"
+  removeDataWhenDeleted: "true"
+secrets:
+  env: "dev"
+  namespace: "_q0"

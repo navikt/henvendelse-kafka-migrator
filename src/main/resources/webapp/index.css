@@ -1,0 +1,37 @@
+/* Simple reset */
+* { box-sizing: border-box; }
+html, body, h1, h2, h3, h4, p, pre { margin: 0; }
+body { font-family: sans-serif; }
+
+/* Styling */
+body {
+    margin: 1rem 0;
+    background-color: floralwhite;
+}
+body > h1 {
+    margin: 0 1rem;
+}
+.healthchecks {
+    margin: 1rem 0;
+}
+.healthchecks h2 {
+    margin: 0 1rem;
+}
+.healthchecks .healthcheck {
+    padding: 0.25rem 1.25rem;
+}
+.healthchecks .healthcheck h1 {
+    font-size: 1rem;
+    font-weight: bold;
+}
+
+.healthchecks .healthcheck.healthcheck--OK {
+    background-color: lightgreen;
+}
+.healthchecks .healthcheck.healthcheck--KO {
+    background-color: lightcoral;
+}
+.healthchecks .healthcheck :is(.stacktrace,.description) {
+    max-height: 25rem;
+    overflow-y: scroll;
+}
