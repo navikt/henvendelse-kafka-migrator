@@ -39,6 +39,7 @@ dependencies {
 
     testImplementation("org.openjdk.jol:jol-core:0.16")
     testImplementation("org.postgresql:postgresql:42.2.23")
+    testImplementation("org.junit.jupiter:junit-jupiter:5.6.2")
 }
 
 tasks.test {

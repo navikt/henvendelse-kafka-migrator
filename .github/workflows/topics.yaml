@@ -1,4 +1,4 @@
-name: Build, push, and deploy
+name: Setup kafka topics
 
 on:
   push:
