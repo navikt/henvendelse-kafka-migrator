@@ -1,7 +1,6 @@
 package no.nav.henvendelsemigrator.utils.kafka
 
 import no.nav.henvendelsemigrator.Config
-import no.nav.henvendelsemigrator.utils.kafka.KafkaEnvironmentVariables.KAFKA_BROKERS
 import no.nav.henvendelsemigrator.utils.kafka.KafkaEnvironmentVariables.KAFKA_CREDSTORE_PASSWORD
 import no.nav.henvendelsemigrator.utils.kafka.KafkaEnvironmentVariables.KAFKA_KEYSTORE_PATH
 import no.nav.henvendelsemigrator.utils.kafka.KafkaEnvironmentVariables.KAFKA_TRUSTSTORE_PATH
@@ -9,7 +8,6 @@ import org.apache.kafka.clients.CommonClientConfigs
 import org.apache.kafka.clients.consumer.ConsumerConfig
 import org.apache.kafka.clients.producer.ProducerConfig
 import org.apache.kafka.common.config.SslConfigs
-import org.apache.kafka.common.serialization.LongSerializer
 import org.apache.kafka.common.serialization.StringDeserializer
 import org.apache.kafka.common.serialization.StringSerializer
 import java.util.*

@@ -20,7 +20,7 @@ fun interface Healthcheck {
             try {
                 block()
                 HealthcheckResult.Ok(name, System.currentTimeMillis() - start, description)
-            } catch(throwable: Throwable) {
+            } catch (throwable: Throwable) {
                 HealthcheckResult.Error(name, System.currentTimeMillis() - start, throwable)
             }
         }
@@ -47,7 +47,7 @@ sealed class HealthcheckResult(val name: String, val time: Long) {
 
 fun DataSource.toHealthcheck(database: String) = Healthcheck.byRunning("Database - $database") {
     val isPostgresql = this is HikariDataSource && this.jdbcUrl.contains(":postgresql:")
-    val query = when(isPostgresql) {
+    val query = when (isPostgresql) {
         true -> "SELECT CURRENT_TIME"
         else -> "SELECT SYSDATE FROM DUAL"
     }

@@ -117,9 +117,10 @@ class ReadHenvendelseTask(
         val arkivpostIds: Array<Long> =
             henvendelse.map { it.arkivpostId?.toLong() }.filterNotNull().distinct().toTypedArray()
         return using(sessionOf(henvendelseArkivDb)) { session ->
-            session.run(queryOf("SELECT *  FROM ARKIVPOST WHERE arkivpostId in (${params(arkivpostIds.size)})", *arkivpostIds)
-                .map { row -> row.toArkivpost() }
-                .asList
+            session.run(
+                queryOf("SELECT *  FROM ARKIVPOST WHERE arkivpostId in (${params(arkivpostIds.size)})", *arkivpostIds)
+                    .map { row -> row.toArkivpost() }
+                    .asList
             ).associateBy { it.arkivpostid }
         }
     }
@@ -128,9 +129,10 @@ class ReadHenvendelseTask(
         val arkivpostIds: Array<Long> =
             henvendelse.map { it.arkivpostId?.toLong() }.filterNotNull().distinct().toTypedArray()
         return using(sessionOf(henvendelseArkivDb)) { session ->
-            session.run(queryOf("SELECT *  FROM VEDLEGG WHERE arkivpostId in (${params(arkivpostIds.size)})", *arkivpostIds)
-                .map { row -> row.toVedlegg() }
-                .asList
+            session.run(
+                queryOf("SELECT *  FROM VEDLEGG WHERE arkivpostId in (${params(arkivpostIds.size)})", *arkivpostIds)
+                    .map { row -> row.toVedlegg() }
+                    .asList
             ).associateBy { it.arkivpostid }
         }
     }
@@ -138,9 +140,10 @@ class ReadHenvendelseTask(
     fun hentAlleHendelser(henvendelser: List<Henvendelse>): Map<Long, List<Hendelse>> {
         val arkivpostIds: Array<Long> = henvendelser.map { it.henvendelseId }.distinct().toTypedArray()
         return using(sessionOf(henvendelseDb)) { session ->
-            session.run(queryOf("SELECT *  FROM hendelse WHERE henvendelse_id in (${params(arkivpostIds.size)})", *arkivpostIds)
-                .map { row -> row.toHendelse() }
-                .asList
+            session.run(
+                queryOf("SELECT *  FROM hendelse WHERE henvendelse_id in (${params(arkivpostIds.size)})", *arkivpostIds)
+                    .map { row -> row.toHendelse() }
+                    .asList
             ).groupBy { it.henvendelseId }
         }
     }
@@ -164,28 +167,30 @@ class ReadHenvendelseTask(
         val start = System.currentTimeMillis()
         try {
             var description: String? = null
-            query(henvendelseDb, "SELECT * FROM HENVENDELSE WHERE behandlingsid = ? OR behandlingsid = ?",
+            query(
+                henvendelseDb, "SELECT * FROM HENVENDELSE WHERE behandlingsid = ? OR behandlingsid = ?",
                 {
                     it.setString(1, "11pg") // LocalTest
                     it.setString(2, "1000C4YTW") // OracleTest
                 },
                 { rs ->
-                for (it in Row(rs)) {
-                    val henvendelse = it.toHenvendelse()
-                    val henvendelseBuffer = listOf(henvendelse)
-                    val arkivposter: Map<Long, Arkivpost> = hentArkivposter(henvendelseBuffer)
-                    val vedlegg: Map<Long, Vedlegg> = hentVedlegg(henvendelseBuffer)
-                    val hendelser: Map<Long, List<Hendelse>> = hentAlleHendelser(henvendelseBuffer)
-                    description = mapOf(
-                        "henvendelse" to henvendelse,
-                        "arkivpost" to arkivposter[henvendelse.arkivpostId?.toLong()],
-                        "vedlegg" to vedlegg[henvendelse.arkivpostId?.toLong()],
-                        "hendelser" to hendelser[henvendelse.henvendelseId]
-                    ).toJson()
+                    for (it in Row(rs)) {
+                        val henvendelse = it.toHenvendelse()
+                        val henvendelseBuffer = listOf(henvendelse)
+                        val arkivposter: Map<Long, Arkivpost> = hentArkivposter(henvendelseBuffer)
+                        val vedlegg: Map<Long, Vedlegg> = hentVedlegg(henvendelseBuffer)
+                        val hendelser: Map<Long, List<Hendelse>> = hentAlleHendelser(henvendelseBuffer)
+                        description = mapOf(
+                            "henvendelse" to henvendelse,
+                            "arkivpost" to arkivposter[henvendelse.arkivpostId?.toLong()],
+                            "vedlegg" to vedlegg[henvendelse.arkivpostId?.toLong()],
+                            "hendelser" to hendelser[henvendelse.henvendelseId]
+                        ).toJson()
+                    }
                 }
-            })
+            )
             HealthcheckResult.Ok(name, System.currentTimeMillis() - start, description)
-        } catch(throwable: Throwable) {
+        } catch (throwable: Throwable) {
             HealthcheckResult.Error(name, System.currentTimeMillis() - start, throwable)
         }
     }

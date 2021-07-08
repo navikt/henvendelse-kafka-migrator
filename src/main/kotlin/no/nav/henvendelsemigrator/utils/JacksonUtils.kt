@@ -12,14 +12,15 @@ object JacksonUtils {
         .apply {
             registerModule(JavaTimeModule())
             configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false)
-            setDefaultPrettyPrinter(DefaultPrettyPrinter().apply {
-                indentArraysWith(DefaultPrettyPrinter.FixedSpaceIndenter.instance)
-                indentObjectsWith(DefaultIndenter("  ", "\n"))
-            })
+            setDefaultPrettyPrinter(
+                DefaultPrettyPrinter().apply {
+                    indentArraysWith(DefaultPrettyPrinter.FixedSpaceIndenter.instance)
+                    indentObjectsWith(DefaultIndenter("  ", "\n"))
+                }
+            )
             disableDefaultTyping()
             enable(SerializationFeature.INDENT_OUTPUT)
         }
-
 }
 
 inline fun <reified T> T.toJson(): String {
@@ -27,5 +28,5 @@ inline fun <reified T> T.toJson(): String {
 }
 
 inline fun <reified T> String.fromJson(): T {
-    return JacksonUtils.objectMapper.readValue(this, object : TypeReference<T>(){})
+    return JacksonUtils.objectMapper.readValue(this, object : TypeReference<T>() {})
 }

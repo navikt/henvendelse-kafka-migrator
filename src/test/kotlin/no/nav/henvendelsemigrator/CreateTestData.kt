@@ -162,7 +162,6 @@ fun params(l: Int) = "?"
     .filter { it.isNotEmpty() }
     .joinToString(", ")
 
-
 fun lagHenvendelse(henvendelseId: Long) = Henvendelse(
     henvendelseId = henvendelseId,
     behandlingsId = henvendelseId.toString(36),
@@ -210,7 +209,7 @@ fun lagHendelse(i: Int, henvendelseId: Long) = Hendelse(
     id = henvendelseId * 4 + i,
     henvendelseId = henvendelseId,
     aktor = "1000012345678",
-    type = when(i) {
+    type = when (i) {
         0 -> "HENVENDELSE_OPPRETTET"
         1 -> "HENVENDELSE_AVSLUTTET"
         2 -> "HENVENDELSE_LEST"

@@ -41,7 +41,6 @@ dependencies {
     testImplementation("org.postgresql:postgresql:42.2.23")
 }
 
-
 tasks.test {
     useJUnitPlatform()
     testLogging {

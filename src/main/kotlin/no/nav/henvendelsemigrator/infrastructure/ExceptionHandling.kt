@@ -17,7 +17,6 @@ fun StatusPages.Configuration.exceptionHandler() {
             "The request was either invalid or lacked required parameters"
         }
     }
-
 }
 
 fun StatusPages.Configuration.notFoundHandler() {

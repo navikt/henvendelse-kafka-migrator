@@ -79,7 +79,7 @@ fun Application.statusPages() {
     }
 }
 
-fun Application.cors(hosts: List<String> = listOf("*"),  methods: List<HttpMethod> = listOf(HttpMethod.Post, HttpMethod.Put, HttpMethod.Delete)) {
+fun Application.cors(hosts: List<String> = listOf("*"), methods: List<HttpMethod> = listOf(HttpMethod.Post, HttpMethod.Put, HttpMethod.Delete)) {
     install(CORS) {
         allowCredentials = true
         hosts.forEach { host(it) }

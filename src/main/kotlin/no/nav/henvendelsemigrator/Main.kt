@@ -5,7 +5,6 @@ import io.ktor.http.content.*
 import io.ktor.routing.*
 import no.nav.henvendelsemigrator.infrastructure.*
 import no.nav.henvendelsemigrator.infrastructure.health.Healthcheck
-import no.nav.henvendelsemigrator.infrastructure.health.HealthcheckResult
 import no.nav.henvendelsemigrator.infrastructure.health.toHealthcheck
 import no.nav.henvendelsemigrator.tasks.ReadHenvendelseTask
 import no.nav.henvendelsemigrator.tasks.TaskManager
