@@ -1,6 +1,7 @@
 # Formål
 Migrering av henvendelser til SF
 
+<img alt="flyt implementert i denne applikasjonen" src="img/migrering-flow.jpg">
 
 ## Kjøre lokal
 `LocalRun.kt` inneholder main-metode for kjøring lokalt
