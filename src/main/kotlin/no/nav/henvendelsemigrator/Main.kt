@@ -39,7 +39,7 @@ fun runApplication(config: Config) {
         henvendelseDb.toHealthcheck("henvendelse"),
         henvendelseArkivDb.toHealthcheck("henvendelsearkiv"),
         kafkaProducer.toHealthcheck(KafkaUtils.henvendelseTopic),
-        kafkaProducer.toHealthcheck(KafkaUtils.hendelseTopic),
+        kafkaProducer.toHealthcheck(KafkaUtils.endringsloggTopic),
         *taskManager.taskmap.values.map { it.toHealtchCheck() }.toTypedArray()
     )
 

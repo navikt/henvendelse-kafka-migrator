@@ -48,7 +48,7 @@ jobs:
           APIKEY: ${{ secrets.NAIS_DEPLOY_APIKEY }}
           PRINT_PAYLOAD: true
           CLUSTER: dev-fss
-          RESOURCE: .nais/hendelse-topic.yaml
+          RESOURCE: .nais/endringlogg-topic.yaml
           VARS: .nais/vars/preprod.yaml
           DRY_RUN: true
       - name: Setup prod
@@ -58,6 +58,6 @@ jobs:
           APIKEY: ${{ secrets.NAIS_DEPLOY_APIKEY }}
           PRINT_PAYLOAD: true
           CLUSTER: dev-fss
-          RESOURCE: .nais/hendelse-topic.yaml
+          RESOURCE: .nais/endringlogg-topic.yaml
           VARS: .nais/vars/prod.yaml
           DRY_RUN: true

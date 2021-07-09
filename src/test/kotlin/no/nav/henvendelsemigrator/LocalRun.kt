@@ -41,7 +41,7 @@ fun main() {
                 println(henvendelseDb.toHealthcheck("henvendelse").check())
                 println(henvendelseArkivDb.toHealthcheck("henvendelsearkiv").check())
                 println(kafkaProducer.toHealthcheck(KafkaUtils.henvendelseTopic).check())
-                println(kafkaProducer.toHealthcheck(KafkaUtils.hendelseTopic).check())
+                println(kafkaProducer.toHealthcheck(KafkaUtils.endringsloggTopic).check())
             }
         }
     }
