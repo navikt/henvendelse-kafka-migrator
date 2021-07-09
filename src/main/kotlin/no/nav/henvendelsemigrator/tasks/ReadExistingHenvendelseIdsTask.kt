@@ -1,6 +1,7 @@
 package no.nav.henvendelsemigrator.tasks
 
 import kotliquery.Row
+import no.nav.henvendelsemigrator.domain.HenvendelseType
 import no.nav.henvendelsemigrator.infrastructure.HealthcheckedDataSource
 import no.nav.henvendelsemigrator.infrastructure.health.Healthcheck
 import no.nav.henvendelsemigrator.infrastructure.health.HealthcheckResult
@@ -20,19 +21,9 @@ class ReadExistingHenvendelseIdsTask(
     private var isDone: Boolean = false
     private var processed: Int = 0
 
-    private val henvendelsetyper = listOf(
-        "SPORSMAL_SKRIFTLIG",
-        "SPORSMAL_SKRIFTLIG_DIREKTE",
-        "SVAR_SKRIFTLIG",
-        "SVAR_OPPMOTE",
-        "SVAR_TELEFON",
-        "DELVIS_SVAR_SKRIFTLIG",
-        "REFERAT_OPPMOTE",
-        "REFERAT_TELEFON",
-        "SPORSMAL_MODIA_UTGAAENDE",
-        "INFOMELDING_MODIA_UTGAAENDE",
-        "SVAR_SBL_INNGAAENDE",
-    ).joinToString(", ") { "'$it'" }
+    private val henvendelsetyper = HenvendelseType
+        .values()
+        .joinToString(", ") { "'$it'" }
 
     override suspend fun runTask() {
         println("Starting $name")

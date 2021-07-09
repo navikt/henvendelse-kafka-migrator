@@ -42,7 +42,7 @@ class ReadHenvendelseTask(
         val query = "SELECT * FROM HENVENDELSE WHERE type in ($henvendelsetyper)"
         executeQuery(henvendelseDb, query) { rs ->
             val iterator: Sequence<Row> = Row(rs)
-            val henvendelseBuffer: MutableList<Henvendelse> = mutableListOf()
+            val henvendelseBuffer: MutableList<OracleHenvendelse> = mutableListOf()
             for (it in iterator) {
                 if (!isRunning()) break
                 henvendelseBuffer.add(it.toHenvendelse())
@@ -59,10 +59,10 @@ class ReadHenvendelseTask(
         println("$name is done")
     }
 
-    fun prosessBuffer(henvendelseBuffer: MutableList<Henvendelse>) {
-        val arkivposter: Map<Long, Arkivpost> = hentArkivposter(henvendelseBuffer)
-        val vedlegg: Map<Long, Vedlegg> = hentVedlegg(henvendelseBuffer)
-        val hendelser: Map<Long, List<Hendelse>> = hentAlleHendelser(henvendelseBuffer)
+    fun prosessBuffer(henvendelseBuffer: MutableList<OracleHenvendelse>) {
+        val arkivposter: Map<Long, OracleArkivpost> = hentArkivposter(henvendelseBuffer)
+        val vedlegg: Map<Long, OracleVedlegg> = hentVedlegg(henvendelseBuffer)
+        val hendelser: Map<Long, List<OracleHendelse>> = hentAlleHendelser(henvendelseBuffer)
         henvendelseBuffer.forEach { henvendelse ->
             val record = mapOf(
                 "henvendelse" to henvendelse,
@@ -76,7 +76,7 @@ class ReadHenvendelseTask(
         henvendelseBuffer.clear()
     }
 
-    fun hentArkivposter(henvendelse: List<Henvendelse>): Map<Long, Arkivpost> {
+    fun hentArkivposter(henvendelse: List<OracleHenvendelse>): Map<Long, OracleArkivpost> {
         val arkivpostIds: Array<Long> =
             henvendelse.map { it.arkivpostId?.toLong() }.filterNotNull().distinct().toTypedArray()
         return executeQuery(
@@ -85,7 +85,7 @@ class ReadHenvendelseTask(
             setVars = { stmt ->
                 arkivpostIds.forEachIndexed { index, arkivpostId ->
                     stmt.setLong(index + 1, arkivpostId)
-                } 
+                }
             },
             process = { rs ->
                 Row(rs).map { it.toArkivpost() }.toList()
@@ -93,7 +93,7 @@ class ReadHenvendelseTask(
         ).associateBy { it.arkivpostid }
     }
 
-    fun hentVedlegg(henvendelse: List<Henvendelse>): Map<Long, Vedlegg> {
+    fun hentVedlegg(henvendelse: List<OracleHenvendelse>): Map<Long, OracleVedlegg> {
         val arkivpostIds: Array<Long> =
             henvendelse.map { it.arkivpostId?.toLong() }.filterNotNull().distinct().toTypedArray()
         return executeQuery(
@@ -102,7 +102,7 @@ class ReadHenvendelseTask(
             setVars = { stmt ->
                 arkivpostIds.forEachIndexed { index, arkivpostId ->
                     stmt.setLong(index + 1, arkivpostId)
-                } 
+                }
             },
             process = { rs ->
                 Row(rs).map { it.toVedlegg() }.toList()
@@ -110,7 +110,7 @@ class ReadHenvendelseTask(
         ).associateBy { it.arkivpostid }
     }
 
-    fun hentAlleHendelser(henvendelser: List<Henvendelse>): Map<Long, List<Hendelse>> {
+    fun hentAlleHendelser(henvendelser: List<OracleHenvendelse>): Map<Long, List<OracleHendelse>> {
         val henvendelseIds: Array<Long> = henvendelser.map { it.henvendelseId }.distinct().toTypedArray()
         return executeQuery(
             dataSource = henvendelseDb,
@@ -118,7 +118,7 @@ class ReadHenvendelseTask(
             setVars = { stmt ->
                 henvendelseIds.forEachIndexed { index, arkivpostId ->
                     stmt.setLong(index + 1, arkivpostId)
-                } 
+                }
             },
             process = { rs ->
                 Row(rs).map { it.toHendelse() }.toList()
@@ -155,9 +155,9 @@ class ReadHenvendelseTask(
                     for (it in Row(rs)) {
                         val henvendelse = it.toHenvendelse()
                         val henvendelseBuffer = listOf(henvendelse)
-                        val arkivposter: Map<Long, Arkivpost> = hentArkivposter(henvendelseBuffer)
-                        val vedlegg: Map<Long, Vedlegg> = hentVedlegg(henvendelseBuffer)
-                        val hendelser: Map<Long, List<Hendelse>> = hentAlleHendelser(henvendelseBuffer)
+                        val arkivposter: Map<Long, OracleArkivpost> = hentArkivposter(henvendelseBuffer)
+                        val vedlegg: Map<Long, OracleVedlegg> = hentVedlegg(henvendelseBuffer)
+                        val hendelser: Map<Long, List<OracleHendelse>> = hentAlleHendelser(henvendelseBuffer)
                         description = mapOf(
                             "henvendelse" to henvendelse,
                             "arkivpost" to arkivposter[henvendelse.arkivpostId?.toLong()],

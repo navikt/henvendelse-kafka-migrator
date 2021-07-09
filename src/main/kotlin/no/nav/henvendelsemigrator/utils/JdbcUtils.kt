@@ -39,3 +39,9 @@ fun <T> executeQuery(
         }
     }
 }
+
+fun paramlist(l: Int) = "?"
+    .repeat(l)
+    .split("")
+    .filter { it.isNotEmpty() }
+    .joinToString(", ")

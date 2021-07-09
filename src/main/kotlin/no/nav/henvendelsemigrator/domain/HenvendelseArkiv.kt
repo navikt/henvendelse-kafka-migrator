@@ -3,7 +3,7 @@ package no.nav.henvendelsemigrator.domain
 import kotliquery.Row
 import java.time.LocalDateTime
 
-data class Arkivpost(
+data class OracleArkivpost(
     val arkivpostid: Long,
     val arkivertdato: LocalDateTime? = null,
     val mottattdato: LocalDateTime? = null,
@@ -23,9 +23,9 @@ data class Arkivpost(
     val signert: Boolean? = null,
     val erorganinternt: Boolean? = null,
     val begrensetpartinnsyn: Boolean? = null,
-    val sensitiv: Boolean? = null
+    val sensitiv: Boolean? = null,
 )
-fun Row.toArkivpost() = Arkivpost(
+fun Row.toArkivpost() = OracleArkivpost(
     arkivpostid = this.long("arkivpostId"),
     arkivertdato = this.localDateTimeOrNull("arkivertDato"),
     mottattdato = this.localDateTimeOrNull("mottattDato"),
@@ -48,7 +48,7 @@ fun Row.toArkivpost() = Arkivpost(
     sensitiv = this.boolean("sensitiv")
 )
 
-data class Vedlegg(
+class OracleVedlegg(
     val arkivpostid: Long,
     val filnavn: String? = null,
     val filtype: String? = null,
@@ -56,9 +56,9 @@ data class Vedlegg(
     val tittel: String? = null,
     val brevkode: String? = null,
     val strukturert: Boolean? = null,
-    val dokument: String? = null
+    val dokument: ByteArray? = null
 )
-fun Row.toVedlegg() = Vedlegg(
+fun Row.toVedlegg() = OracleVedlegg(
     arkivpostid = this.long("arkivpostid"),
     filnavn = this.stringOrNull("filnavn"),
     filtype = this.stringOrNull("filtype"),
@@ -66,5 +66,5 @@ fun Row.toVedlegg() = Vedlegg(
     tittel = this.stringOrNull("tittel"),
     brevkode = this.stringOrNull("brevkode"),
     strukturert = this.boolean("strukturert"),
-    dokument = this.stringOrNull("dokument"),
+    dokument = this.bytesOrNull("dokument"),
 )

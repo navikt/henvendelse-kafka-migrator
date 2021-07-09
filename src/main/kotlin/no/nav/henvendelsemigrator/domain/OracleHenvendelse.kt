@@ -3,7 +3,7 @@ package no.nav.henvendelsemigrator.domain
 import kotliquery.Row
 import java.time.LocalDateTime
 
-data class Henvendelse(
+data class OracleHenvendelse(
     val henvendelseId: Long,
     val behandlingsId: String,
     val behandlingsKjedeId: String,
@@ -31,7 +31,7 @@ data class Henvendelse(
     val oversendtDokmot: Boolean? = null,
     val behandlingstema: String? = null
 )
-fun Row.toHenvendelse() = Henvendelse(
+fun Row.toHenvendelse() = OracleHenvendelse(
     henvendelseId = this.long("henvendelse_id"),
     behandlingsId = this.string("behandlingsid"),
     behandlingsKjedeId = this.string("behandlingskjedeid"),
@@ -59,7 +59,7 @@ fun Row.toHenvendelse() = Henvendelse(
     oversendtDokmot = this.boolean("oversendtdokmot"),
     behandlingstema = this.stringOrNull("behandlingstema")
 )
-data class Hendelse(
+data class OracleHendelse(
     val id: Long,
     val henvendelseId: Long,
     val aktor: String? = null,
@@ -68,7 +68,7 @@ data class Hendelse(
     val enhet: String? = null,
     val verdi: String? = null
 )
-fun Row.toHendelse() = Hendelse(
+fun Row.toHendelse() = OracleHendelse(
     id = this.long("id"),
     henvendelseId = this.long("henvendelse_id"),
     aktor = this.string("aktor"),
@@ -77,3 +77,14 @@ fun Row.toHendelse() = Hendelse(
     enhet = this.stringOrNull("enhet"),
     verdi = this.stringOrNull("verdi")
 )
+
+object HendelseKeys {
+    const val ferdigstiltUtenSvar = "HENVENDELSE_FERDIGSTILT_UTEN_SVAR"
+    const val lest = "HENVENDELSE_LEST"
+    const val feilsendt = "MARKERT_SOM_FEILSENDT"
+    const val kontorsperret = "KONTORSPERRET"
+
+    const val endretTemagruppe = "ENDRET_TEMAGRUPPE"
+    const val knyttetTilTema = "KNYTTET_TIL_TEMA"
+    const val knyttetTilSak = "KNYTTET_TIL_SAK"
+}

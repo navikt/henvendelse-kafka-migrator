@@ -1,9 +1,9 @@
 package no.nav.henvendelsemigrator
 
-import no.nav.henvendelsemigrator.domain.Arkivpost
-import no.nav.henvendelsemigrator.domain.Hendelse
-import no.nav.henvendelsemigrator.domain.Henvendelse
-import no.nav.henvendelsemigrator.domain.Vedlegg
+import no.nav.henvendelsemigrator.domain.OracleArkivpost
+import no.nav.henvendelsemigrator.domain.OracleHendelse
+import no.nav.henvendelsemigrator.domain.OracleHenvendelse
+import no.nav.henvendelsemigrator.domain.OracleVedlegg
 import no.nav.henvendelsemigrator.infrastructure.DataSourceConfiguration
 import java.sql.PreparedStatement
 import java.sql.Timestamp
@@ -11,10 +11,10 @@ import java.time.LocalDateTime
 import java.util.*
 
 data class Ingest(
-    val henvendelse: Henvendelse,
-    val hendelser: List<Hendelse>,
-    val arkivpost: Arkivpost,
-    val vedlegg: Vedlegg
+    val henvendelse: OracleHenvendelse,
+    val hendelser: List<OracleHendelse>,
+    val arkivpost: OracleArkivpost,
+    val vedlegg: OracleVedlegg
 )
 
 fun main() {
@@ -69,7 +69,7 @@ fun main() {
         }
 }
 
-fun PreparedStatement.addHenvendelseToBatch(henvendelse: Henvendelse) {
+fun PreparedStatement.addHenvendelseToBatch(henvendelse: OracleHenvendelse) {
     setLong(1, henvendelse.henvendelseId)
     setString(2, henvendelse.behandlingsId)
     setString(3, henvendelse.behandlingsKjedeId)
@@ -101,7 +101,7 @@ fun PreparedStatement.addHenvendelseToBatch(henvendelse: Henvendelse) {
     clearParameters()
 }
 
-fun PreparedStatement.addHendelserToBatch(hendelser: List<Hendelse>) {
+fun PreparedStatement.addHendelserToBatch(hendelser: List<OracleHendelse>) {
     for (hendelse in hendelser) {
         setLong(1, hendelse.id)
         setLong(2, hendelse.henvendelseId)
@@ -116,7 +116,7 @@ fun PreparedStatement.addHendelserToBatch(hendelser: List<Hendelse>) {
     }
 }
 
-fun PreparedStatement.addArkivpostToBatch(arkivpost: Arkivpost) {
+fun PreparedStatement.addArkivpostToBatch(arkivpost: OracleArkivpost) {
     setLong(1, arkivpost.arkivpostid)
     setTimestamp(2, Timestamp.valueOf(arkivpost.arkivertdato))
     setTimestamp(3, Timestamp.valueOf(arkivpost.mottattdato))
@@ -142,7 +142,7 @@ fun PreparedStatement.addArkivpostToBatch(arkivpost: Arkivpost) {
     clearParameters()
 }
 
-fun PreparedStatement.addVedleggToBatch(vedlegg: Vedlegg) {
+fun PreparedStatement.addVedleggToBatch(vedlegg: OracleVedlegg) {
     setLong(1, vedlegg.arkivpostid)
     setString(2, vedlegg.filnavn)
     setString(3, vedlegg.filtype)
@@ -150,7 +150,7 @@ fun PreparedStatement.addVedleggToBatch(vedlegg: Vedlegg) {
     setString(5, vedlegg.tittel)
     setString(6, vedlegg.brevkode)
     setInt(7, vedlegg.strukturert.asNumeric())
-    setString(8, vedlegg.dokument)
+    setBytes(8, vedlegg.dokument)
 
     addBatch()
     clearParameters()
@@ -162,7 +162,7 @@ fun params(l: Int) = "?"
     .filter { it.isNotEmpty() }
     .joinToString(", ")
 
-fun lagHenvendelse(henvendelseId: Long) = Henvendelse(
+fun lagHenvendelse(henvendelseId: Long) = OracleHenvendelse(
     henvendelseId = henvendelseId,
     behandlingsId = henvendelseId.toString(36),
     behandlingsKjedeId = henvendelseId.toString(36),
@@ -205,7 +205,7 @@ fun lagHendelser(henvendelseId: Long) = listOf(
     lagHendelse(3, henvendelseId)
 )
 
-fun lagHendelse(i: Int, henvendelseId: Long) = Hendelse(
+fun lagHendelse(i: Int, henvendelseId: Long) = OracleHendelse(
     id = henvendelseId * 4 + i,
     henvendelseId = henvendelseId,
     aktor = "1000012345678",
@@ -220,7 +220,7 @@ fun lagHendelse(i: Int, henvendelseId: Long) = Hendelse(
     verdi = "OKSOK"
 )
 
-fun lagArkivpost(henvendelseId: Long) = Arkivpost(
+fun lagArkivpost(henvendelseId: Long) = OracleArkivpost(
     arkivpostid = henvendelseId,
     arkivertdato = LocalDateTime.now().minusDays(1),
     mottattdato = LocalDateTime.now().minusDays(1),
@@ -243,7 +243,7 @@ fun lagArkivpost(henvendelseId: Long) = Arkivpost(
     sensitiv = false,
 )
 
-fun lagVedlegg(henvendelseId: Long) = Vedlegg(
+fun lagVedlegg(henvendelseId: Long) = OracleVedlegg(
     arkivpostid = henvendelseId,
     filnavn = "filnavn",
     filtype = "XML",
@@ -258,7 +258,7 @@ fun lagVedlegg(henvendelseId: Long) = Vedlegg(
                 <fritekst>Hei, \n det er mye tekst som kan stå her. Dette er ID $henvendelseId (${henvendelseId.toString(36)})</fritekst>
             </metadata>
         </ns2:metadataListe>
-    """.trimIndent(),
+    """.trimIndent().toByteArray(),
 )
 
 fun Boolean?.asNumeric() = if (this == true) 1 else 0
