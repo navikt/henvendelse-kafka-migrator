@@ -23,9 +23,24 @@ class ReadHenvendelseTask(
     private var isDone: Boolean = false
     private var processed: Int = 0
 
+    private val henvendelsetyper = listOf(
+        "SPORSMAL_SKRIFTLIG",
+        "SPORSMAL_SKRIFTLIG_DIREKTE",
+        "SVAR_SKRIFTLIG",
+        "SVAR_OPPMOTE",
+        "SVAR_TELEFON",
+        "DELVIS_SVAR_SKRIFTLIG",
+        "REFERAT_OPPMOTE",
+        "REFERAT_TELEFON",
+        "SPORSMAL_MODIA_UTGAAENDE",
+        "INFOMELDING_MODIA_UTGAAENDE",
+        "SVAR_SBL_INNGAAENDE",
+    ).joinToString(", ") { "'$it'" }
+
     override suspend fun runTask() {
         println("Starting $name")
-        executeQuery(henvendelseDb, "SELECT * FROM HENVENDELSE") { rs ->
+        val query = "SELECT * FROM HENVENDELSE WHERE type in ($henvendelsetyper)"
+        executeQuery(henvendelseDb, query) { rs ->
             val iterator: Sequence<Row> = Row(rs)
             val henvendelseBuffer: MutableList<Henvendelse> = mutableListOf()
             for (it in iterator) {
