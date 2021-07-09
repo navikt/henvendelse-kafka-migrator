@@ -145,7 +145,7 @@ class ReadHenvendelseTask(
         val start = System.currentTimeMillis()
         try {
             executeQuery(
-                henvendelseDb, "SELECT * FROM HENVENDELSE WHERE behandlingsid = ? OR behandlingsid = ?",
+                henvendelseDb, "SELECT * FROM HENVENDELSE WHERE type in ($henvendelsetyper) AND (behandlingsid = ? OR behandlingsid = ?)",
                 {
                     it.setString(1, "11pg") // LocalTest
                     it.setString(2, "1000C4YTW") // OracleTest
