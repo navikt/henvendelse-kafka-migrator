@@ -8,9 +8,9 @@ import com.zaxxer.hikari.HikariDataSource
 import kotliquery.queryOf
 import kotliquery.sessionOf
 import kotliquery.using
+import no.nav.henvendelsemigrator.infrastructure.HealthcheckedDataSource
 import org.apache.kafka.clients.consumer.KafkaConsumer
 import org.apache.kafka.clients.producer.KafkaProducer
-import javax.sql.DataSource
 
 fun interface Healthcheck {
     suspend fun check(): HealthcheckResult
@@ -45,14 +45,19 @@ sealed class HealthcheckResult(val name: String, val time: Long) {
     }
 }
 
-fun DataSource.toHealthcheck(database: String) = Healthcheck.byRunning("Database - $database") {
-    val isPostgresql = this is HikariDataSource && this.jdbcUrl.contains(":postgresql:")
-    val query = when (isPostgresql) {
-        true -> "SELECT CURRENT_TIME"
-        else -> "SELECT SYSDATE FROM DUAL"
-    }
-    using(sessionOf(this)) { session ->
-        session.run(queryOf(query).asExecute)
+fun HealthcheckedDataSource.toHealthcheck(database: String) = Healthcheck.byRunning("Database - $database") {
+    when (this) {
+        is HealthcheckedDataSource.Error -> throw this.throwable
+        is HealthcheckedDataSource.Ok -> {
+            val isPostgresql = this.dataSource is HikariDataSource && this.dataSource.jdbcUrl.contains(":postgresql:")
+            val query = when (isPostgresql) {
+                true -> "SELECT CURRENT_TIME"
+                else -> "SELECT SYSDATE FROM DUAL"
+            }
+            using(sessionOf(this.dataSource)) { session ->
+                session.run(queryOf(query).asExecute)
+            }
+        }
     }
 }
 

@@ -19,8 +19,8 @@ data class Ingest(
 
 fun main() {
     val config = LocalConfig()
-    val henvendelseDb = DataSourceConfiguration.getDatasource(config.henvendelseDbConfig)
-    val henvendelseArkivDb = DataSourceConfiguration.getDatasource(config.henvendelseArkivDbConfig)
+    val henvendelseDb = DataSourceConfiguration.getDatasource(config.henvendelseDbConfig).getOrThrow()
+    val henvendelseArkivDb = DataSourceConfiguration.getDatasource(config.henvendelseArkivDbConfig).getOrThrow()
 
     println(params(10))
     LongRange(1, 1_000_000).asSequence()

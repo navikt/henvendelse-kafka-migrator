@@ -1,57 +1,19 @@
 package no.nav.henvendelsemigrator.tasks
 
-import kotlinx.coroutines.*
 import kotliquery.Row
-import kotliquery.queryOf
-import kotliquery.sessionOf
-import kotliquery.using
 import no.nav.henvendelsemigrator.domain.*
+import no.nav.henvendelsemigrator.infrastructure.HealthcheckedDataSource
 import no.nav.henvendelsemigrator.infrastructure.health.Healthcheck
 import no.nav.henvendelsemigrator.infrastructure.health.HealthcheckResult
+import no.nav.henvendelsemigrator.utils.executeQuery
 import no.nav.henvendelsemigrator.utils.kafka.KafkaUtils
 import no.nav.henvendelsemigrator.utils.toJson
 import org.apache.kafka.clients.producer.KafkaProducer
 import org.apache.kafka.clients.producer.ProducerRecord
-import java.sql.PreparedStatement
-import java.sql.ResultSet
-import java.time.LocalDateTime
-import javax.sql.DataSource
-
-abstract class SimpleTask : Task {
-    private var process: Job? = null
-    protected var startingTime: LocalDateTime? = null
-    protected var endTime: LocalDateTime? = null
-
-    abstract suspend fun runTask()
-    abstract suspend fun reset()
-    override suspend fun start() {
-        if (process != null) throw IllegalStateException("Task $name is already running")
-        withContext(Dispatchers.IO) {
-            startingTime = LocalDateTime.now()
-            endTime = null
-            println("Starting $name ${LocalDateTime.now()}")
-            // Launching in globalScope as to not force ktor to wait for the jobs completions
-            process = GlobalScope.launch {
-                reset()
-                runTask()
-                endTime = LocalDateTime.now()
-            }
-            println("Started $name ${LocalDateTime.now()}")
-        }
-    }
-
-    override suspend fun stop() {
-        if (process == null) throw IllegalStateException("Task $name is not running")
-        process?.cancel()
-        process = null
-    }
-
-    override fun isRunning(): Boolean = process != null
-}
 
 class ReadHenvendelseTask(
-    val henvendelseDb: DataSource,
-    val henvendelseArkivDb: DataSource,
+    val henvendelseDb: HealthcheckedDataSource,
+    val henvendelseArkivDb: HealthcheckedDataSource,
     val kafka: KafkaProducer<String, String>
 ) : SimpleTask() {
     override val name: String = requireNotNull(ReadHenvendelseTask::class.simpleName)
@@ -61,23 +23,9 @@ class ReadHenvendelseTask(
     private var isDone: Boolean = false
     private var processed: Int = 0
 
-    fun query(
-        dataSource: DataSource,
-        query: String,
-        setVars: (PreparedStatement) -> Unit,
-        process: (ResultSet) -> Unit
-    ) {
-        using(dataSource.connection.prepareStatement(query)) { statement ->
-            statement.fetchSize = 1000
-            statement.fetchDirection = ResultSet.FETCH_FORWARD
-            setVars(statement)
-            process(statement.executeQuery())
-        }
-    }
-
     override suspend fun runTask() {
         println("Starting $name")
-        query(henvendelseDb, "SELECT * FROM HENVENDELSE", {}) { rs ->
+        executeQuery(henvendelseDb, "SELECT * FROM HENVENDELSE") { rs ->
             val iterator: Sequence<Row> = Row(rs)
             val henvendelseBuffer: MutableList<Henvendelse> = mutableListOf()
             for (it in iterator) {
@@ -116,36 +64,51 @@ class ReadHenvendelseTask(
     fun hentArkivposter(henvendelse: List<Henvendelse>): Map<Long, Arkivpost> {
         val arkivpostIds: Array<Long> =
             henvendelse.map { it.arkivpostId?.toLong() }.filterNotNull().distinct().toTypedArray()
-        return using(sessionOf(henvendelseArkivDb)) { session ->
-            session.run(
-                queryOf("SELECT *  FROM ARKIVPOST WHERE arkivpostId in (${params(arkivpostIds.size)})", *arkivpostIds)
-                    .map { row -> row.toArkivpost() }
-                    .asList
-            ).associateBy { it.arkivpostid }
-        }
+        return executeQuery(
+            dataSource = henvendelseArkivDb,
+            query = "SELECT *  FROM ARKIVPOST WHERE arkivpostId in (${params(arkivpostIds.size)})",
+            setVars = { stmt ->
+                arkivpostIds.forEachIndexed { index, arkivpostId ->
+                    stmt.setLong(index + 1, arkivpostId)
+                } 
+            },
+            process = { rs ->
+                Row(rs).map { it.toArkivpost() }.toList()
+            }
+        ).associateBy { it.arkivpostid }
     }
 
     fun hentVedlegg(henvendelse: List<Henvendelse>): Map<Long, Vedlegg> {
         val arkivpostIds: Array<Long> =
             henvendelse.map { it.arkivpostId?.toLong() }.filterNotNull().distinct().toTypedArray()
-        return using(sessionOf(henvendelseArkivDb)) { session ->
-            session.run(
-                queryOf("SELECT *  FROM VEDLEGG WHERE arkivpostId in (${params(arkivpostIds.size)})", *arkivpostIds)
-                    .map { row -> row.toVedlegg() }
-                    .asList
-            ).associateBy { it.arkivpostid }
-        }
+        return executeQuery(
+            dataSource = henvendelseArkivDb,
+            query = "SELECT * FROM VEDLEGG WHERE arkivpostId in (${params(arkivpostIds.size)})",
+            setVars = { stmt ->
+                arkivpostIds.forEachIndexed { index, arkivpostId ->
+                    stmt.setLong(index + 1, arkivpostId)
+                } 
+            },
+            process = { rs ->
+                Row(rs).map { it.toVedlegg() }.toList()
+            }
+        ).associateBy { it.arkivpostid }
     }
 
     fun hentAlleHendelser(henvendelser: List<Henvendelse>): Map<Long, List<Hendelse>> {
-        val arkivpostIds: Array<Long> = henvendelser.map { it.henvendelseId }.distinct().toTypedArray()
-        return using(sessionOf(henvendelseDb)) { session ->
-            session.run(
-                queryOf("SELECT *  FROM hendelse WHERE henvendelse_id in (${params(arkivpostIds.size)})", *arkivpostIds)
-                    .map { row -> row.toHendelse() }
-                    .asList
-            ).groupBy { it.henvendelseId }
-        }
+        val henvendelseIds: Array<Long> = henvendelser.map { it.henvendelseId }.distinct().toTypedArray()
+        return executeQuery(
+            dataSource = henvendelseDb,
+            query = "SELECT *  FROM hendelse WHERE henvendelse_id in (${params(henvendelseIds.size)})",
+            setVars = { stmt ->
+                henvendelseIds.forEachIndexed { index, arkivpostId ->
+                    stmt.setLong(index + 1, arkivpostId)
+                } 
+            },
+            process = { rs ->
+                Row(rs).map { it.toHendelse() }.toList()
+            }
+        ).groupBy { it.henvendelseId }
     }
 
     override suspend fun reset() {
@@ -166,14 +129,14 @@ class ReadHenvendelseTask(
     override fun toHealtchCheck() = Healthcheck {
         val start = System.currentTimeMillis()
         try {
-            var description: String? = null
-            query(
+            executeQuery(
                 henvendelseDb, "SELECT * FROM HENVENDELSE WHERE behandlingsid = ? OR behandlingsid = ?",
                 {
                     it.setString(1, "11pg") // LocalTest
                     it.setString(2, "1000C4YTW") // OracleTest
                 },
                 { rs ->
+                    var description: String? = null
                     for (it in Row(rs)) {
                         val henvendelse = it.toHenvendelse()
                         val henvendelseBuffer = listOf(henvendelse)
@@ -187,9 +150,13 @@ class ReadHenvendelseTask(
                             "hendelser" to hendelser[henvendelse.henvendelseId]
                         ).toJson()
                     }
+                    if (description == null) {
+                        HealthcheckResult.Error(name, System.currentTimeMillis() - start, IllegalStateException("No matching rows found"))
+                    } else {
+                        HealthcheckResult.Ok(name, System.currentTimeMillis() - start, description)
+                    }
                 }
             )
-            HealthcheckResult.Ok(name, System.currentTimeMillis() - start, description)
         } catch (throwable: Throwable) {
             HealthcheckResult.Error(name, System.currentTimeMillis() - start, throwable)
         }
