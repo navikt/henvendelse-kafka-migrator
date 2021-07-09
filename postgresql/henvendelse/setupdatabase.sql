@@ -36,5 +36,10 @@ CREATE TABLE hendelse(
     verdi VARCHAR
 );
 
+CREATE TABLE migreringmetadata(
+    key VARCHAR,
+    value VARCHAR
+);
+
 CREATE INDEX henvendelse_henvendelse_id on henvendelse (henvendelse_id);
 CREATE INDEX hendelse_henvendelse_id on hendelse (henvendelse_id);
