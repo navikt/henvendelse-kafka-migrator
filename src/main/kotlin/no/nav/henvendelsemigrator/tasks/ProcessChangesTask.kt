@@ -259,7 +259,7 @@ class ProcessChangesTask(
             process = { rs ->
                 Row(rs).map { it.toHendelse() }.toList()
             }
-        )   .sortedBy { it.dato }
+        ).sortedBy { it.dato }
             .groupBy { it.henvendelseId }
     }
 
