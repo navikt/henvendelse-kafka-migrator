@@ -9,13 +9,28 @@ import java.sql.PreparedStatement
 import java.sql.Timestamp
 import java.time.LocalDateTime
 import java.util.*
+import kotlin.random.Random
 
 data class Ingest(
     val henvendelse: OracleHenvendelse,
     val hendelser: List<OracleHendelse>,
-    val arkivpost: OracleArkivpost,
-    val vedlegg: OracleVedlegg
-)
+    val arkivpost: OracleArkivpost? = null,
+    val vedlegg: OracleVedlegg? = null
+) {
+    fun getAktorId(): String = "100001" + (henvendelse.henvendelseId.toString().padStart(7, '0'))
+    fun getFnr(): String = "012" + (henvendelse.henvendelseId.toString().padStart(7, '0'))
+    fun overfortTilArkiv(): Ingest {
+        return this.copy(
+            henvendelse = henvendelse.copy(behandlingsresultat = null),
+            arkivpost = lagArkivpost(
+                henvendelseId = this.henvendelse.henvendelseId,
+                aktoerid = getAktorId(),
+                fodselsnummer = getFnr()
+            ),
+            vedlegg = lagVedlegg(this.henvendelse.henvendelseId)
+        )
+    }
+}
 
 fun main() {
     val config = LocalConfig()
@@ -27,10 +42,14 @@ fun main() {
         .map { id ->
             Ingest(
                 lagHenvendelse(id),
-                lagHendelser(id),
-                lagArkivpost(id),
-                lagVedlegg(id),
-            )
+                lagHendelser(id)
+            ).let {
+                if (Random.nextDouble() > 0.05) {
+                    it.overfortTilArkiv()
+                } else {
+                    it
+                }
+            }
         }
         .chunked(1000)
         .forEach { ingestChunk ->
@@ -40,18 +59,21 @@ fun main() {
 
             val henvendelseQuery = henvendelseCon.prepareStatement("INSERT INTO henvendelse VALUES (${params(26)})")
             val hendelseQuery = henvendelseCon.prepareStatement("INSERT INTO hendelse VALUES (${params(7)})")
+            val aktorFnrQuery = henvendelseCon.prepareStatement("INSERT INTO aktor_fnr_mapping VALUES (${params(2)})")
             val arkivpostQuery = arkivCon.prepareStatement("INSERT INTO arkivpost VALUES (${params(20)})")
             val vedleggQuery = arkivCon.prepareStatement("INSERT INTO vedlegg VALUES (${params(8)})")
 
             for (ingest in ingestChunk) {
                 henvendelseQuery.addHenvendelseToBatch(ingest.henvendelse)
                 hendelseQuery.addHendelserToBatch(ingest.hendelser)
-                arkivpostQuery.addArkivpostToBatch(ingest.arkivpost)
-                vedleggQuery.addVedleggToBatch(ingest.vedlegg)
+                aktorFnrQuery.addAktorFnrMappingToBatch(ingest.getAktorId(), ingest.getFnr())
+                ingest.arkivpost?.also { arkivpostQuery.addArkivpostToBatch(it) }
+                ingest.vedlegg?.also { vedleggQuery.addVedleggToBatch(it) }
             }
 
             henvendelseQuery.executeBatch()
             hendelseQuery.executeBatch()
+            aktorFnrQuery.executeBatch()
             arkivpostQuery.executeBatch()
             vedleggQuery.executeBatch()
 
@@ -60,6 +82,7 @@ fun main() {
 
             henvendelseQuery.close()
             hendelseQuery.close()
+            aktorFnrQuery.close()
             arkivpostQuery.close()
             vedleggQuery.close()
             henvendelseCon.close()
@@ -114,6 +137,13 @@ fun PreparedStatement.addHendelserToBatch(hendelser: List<OracleHendelse>) {
         addBatch()
         clearParameters()
     }
+}
+fun PreparedStatement.addAktorFnrMappingToBatch(aktorId: String, fnr: String) {
+    setString(1, aktorId)
+    setString(2, fnr)
+
+    addBatch()
+    clearParameters()
 }
 
 fun PreparedStatement.addArkivpostToBatch(arkivpost: OracleArkivpost) {
@@ -173,11 +203,26 @@ fun lagHenvendelse(henvendelseId: Long) = OracleHenvendelse(
     opprettetdato = LocalDateTime.now().minusDays(1),
     innsendtdato = LocalDateTime.now().minusDays(1),
     sistendretdato = LocalDateTime.now().minusDays(1),
-    behandlingsresultat = """
-        <ns2:metadataListe>
-            <metadata>
-                <temagruppe>OKSOS</temagruppe>
-                <fritekst>Hei, \n det er mye tekst som kan stå her. Dette er ID $henvendelseId (${henvendelseId.toString(36)})</fritekst>
+    behandlingsresultat = if (henvendelseId.rem(2) == 0L) """
+        <ns2:metadataListe xmlns:ns2="http://nav.no/melding/domene/brukerdialog/behandlingsinformasjon/v1">
+            <metadata xsi:type="ns2:meldingFraBruker" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+                <temagruppe>ORT_HJE</temagruppe>
+                <fritekst>Til En eller annet person - NAV Ullern.   Oslo 23. januar 2018.
+        Jeg trekker herved min søknad om penger: $henvendelseId (${henvendelseId.toString(36)})
+        Mvh Mitt navn 1231
+        Min mail-adresse er dummy@dummy.no mobil 123456123</fritekst>
+            </metadata>
+        </ns2:metadataListe>
+    """.trimIndent() else """
+        <ns2:metadataListe xmlns:ns2="http://nav.no/melding/domene/brukerdialog/behandlingsinformasjon/v1">
+            <metadata xsi:type="ns2:meldingTilBruker" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+                <temagruppe>ARBD</temagruppe>
+                <fritekst>MITT NAVN har spørsmål til vedlegg på søknad om arbeidsavklaringspengar.
+        $henvendelseId (${henvendelseId.toString(36)})
+        Informerer utfrå nav.no
+        https://www.nav.no/no/skjema/Skjemaer/Privatpersoner/skjemaveileder/skjemaveileder?key=229735&amp;languagecode=54</fritekst>
+                <kanal>TELEFON</kanal>
+                <navident>Z999999</navident>
             </metadata>
         </ns2:metadataListe>
     """.trimIndent(),
@@ -220,7 +265,7 @@ fun lagHendelse(i: Int, henvendelseId: Long) = OracleHendelse(
     verdi = "OKSOS"
 )
 
-fun lagArkivpost(henvendelseId: Long) = OracleArkivpost(
+fun lagArkivpost(henvendelseId: Long, aktoerid: String, fodselsnummer: String) = OracleArkivpost(
     arkivpostid = henvendelseId,
     arkivertdato = LocalDateTime.now().minusDays(1),
     mottattdato = LocalDateTime.now().minusDays(1),
@@ -230,8 +275,8 @@ fun lagArkivpost(henvendelseId: Long) = OracleArkivpost(
     dokumenttype = "GEN_SVAR_001",
     kryssreferanseid = henvendelseId.toString(36),
     kanal = "NAV_NO",
-    aktoerid = "1000012345678",
-    fodselsnummer = "0123456791",
+    aktoerid = aktoerid,
+    fodselsnummer = fodselsnummer,
     navident = "Z999999",
     innhold = "ustrukturert tekst",
     journalfoerendeenhet = "JournalforendeEnhetRef",
@@ -251,11 +296,24 @@ fun lagVedlegg(henvendelseId: Long) = OracleVedlegg(
     tittel = "Spørsmål fra nav.no",
     brevkode = "9000021",
     strukturert = false,
-    dokument = """
-        <ns2:metadataListe>
-            <metadata>
-                <temagruppe>OKSOS</temagruppe>
-                <fritekst>Hei, \n det er mye tekst som kan stå her. Dette er ID $henvendelseId (${henvendelseId.toString(36)})</fritekst>
+    dokument = if (henvendelseId.rem(2) == 0L) """
+        <ns2:metadataListe xmlns:ns2="http://nav.no/melding/domene/brukerdialog/behandlingsinformasjon/v1">
+            <metadata xsi:type="ns2:meldingFraBruker" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+                <temagruppe>ARBD</temagruppe>
+                <fritekst>hei jeg lurer pÃ¥ nÃ¥r jeg blir innkalt til videre samtale ang min situasjon da jeg gÃ¥r pÃ¥ arbeidsavklaring stÃ¸nad.
+         Min id: $henvendelseId (${henvendelseId.toString(36)})
+                </fritekst>
+            </metadata>
+        </ns2:metadataListe>
+    """.trimIndent().toByteArray() else """
+        <ns2:metadataListe xmlns:ns2="http://nav.no/melding/domene/brukerdialog/behandlingsinformasjon/v1">
+            <metadata xsi:type="ns2:meldingTilBruker" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+                <temagruppe>UFRT</temagruppe>
+                <fritekst>Bekrefter at siste utbetaling gjelder november mÃ¥ned og at utbetaling for desember vil utbetales i lÃ¸pet av uke 50.
+            Dette er min id: $henvendelseId (${henvendelseId.toString(36)})
+                </fritekst>
+                <kanal>TELEFON</kanal>
+                <navident>Z999999</navident>
             </metadata>
         </ns2:metadataListe>
     """.trimIndent().toByteArray(),

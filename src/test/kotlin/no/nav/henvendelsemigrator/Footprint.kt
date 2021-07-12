@@ -7,7 +7,7 @@ fun main() {
     val ingest = Ingest(
         lagHenvendelse(id),
         lagHendelser(id),
-        lagArkivpost(id),
+        lagArkivpost(id, "1000010000002", "0120000002"),
         lagVedlegg(id),
     )
 

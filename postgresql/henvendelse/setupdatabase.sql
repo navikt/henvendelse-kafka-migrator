@@ -41,5 +41,12 @@ CREATE TABLE migreringmetadata(
     value VARCHAR
 );
 
+CREATE TABLE aktor_fnr_mapping(
+    aktorId VARCHAR NOT NULL,
+    fnr VARCHAR NOT NULL,
+    opprettetDato TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
 CREATE INDEX henvendelse_henvendelse_id on henvendelse (henvendelse_id);
 CREATE INDEX hendelse_henvendelse_id on hendelse (henvendelse_id);
+CREATE INDEX aktor_fnr_mapping_aktor on aktor_fnr_mapping (aktorId);
