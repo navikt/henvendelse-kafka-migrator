@@ -16,7 +16,7 @@ class ReadExistingHenvendelseIdsTask(
 ) : SimpleTask() {
     override val name: String = requireNotNull(ReadExistingHenvendelseIdsTask::class.simpleName)
     override val description: String = """
-        Leser alle relevante henvendelse_ider fra henvendelseDB. 
+        Leser alle relevante henvendelse_ider fra henvendelseDB og legg til henvendelse_endringslogg. 
     """.trimIndent()
     private var isDone: Boolean = false
     private var processed: Int = 0
@@ -27,7 +27,7 @@ class ReadExistingHenvendelseIdsTask(
 
     override suspend fun runTask() {
         println("Starting $name")
-        val query = "SELECT henvendelse_id FROM HENVENDELSE WHERE type in ($henvendelsetyper)"
+        val query = "SELECT henvendelse_id FROM HENVENDELSE WHERE type in ($henvendelsetyper) AND STATUS = 'FERDIG'"
         executeQuery(henvendelseDb, query) { rs ->
             Row(rs).forEach {
                 val henvendelseId = it.string("henvendelse_id")

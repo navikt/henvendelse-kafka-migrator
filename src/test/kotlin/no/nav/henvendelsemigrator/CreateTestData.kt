@@ -83,7 +83,7 @@ fun PreparedStatement.addHenvendelseToBatch(henvendelse: OracleHenvendelse) {
     setString(11, henvendelse.behandlingsresultat)
     setString(12, henvendelse.journalfortSaksid)
     setString(13, henvendelse.journalfortTema)
-    setString(14, henvendelse.journalportId)
+    setString(14, henvendelse.journalpostId)
     setString(15, henvendelse.batchStatus)
     setString(16, henvendelse.arkivpostId)
     setString(17, henvendelse.kontorsperre)
@@ -183,7 +183,7 @@ fun lagHenvendelse(henvendelseId: Long) = OracleHenvendelse(
     """.trimIndent(),
     journalfortSaksid = "123456asd",
     journalfortTema = "DAG",
-    journalportId = "123456789",
+    journalpostId = "123456789",
     batchStatus = "LEDIG",
     arkivpostId = henvendelseId.toString(),
     kontorsperre = "1234",
@@ -217,7 +217,7 @@ fun lagHendelse(i: Int, henvendelseId: Long) = OracleHendelse(
     },
     dato = LocalDateTime.now(),
     enhet = "1234",
-    verdi = "OKSOK"
+    verdi = "OKSOS"
 )
 
 fun lagArkivpost(henvendelseId: Long) = OracleArkivpost(

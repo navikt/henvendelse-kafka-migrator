@@ -6,6 +6,7 @@ import io.ktor.routing.*
 import no.nav.henvendelsemigrator.infrastructure.*
 import no.nav.henvendelsemigrator.infrastructure.health.Healthcheck
 import no.nav.henvendelsemigrator.infrastructure.health.toHealthcheck
+import no.nav.henvendelsemigrator.tasks.ProcessChangesTask
 import no.nav.henvendelsemigrator.tasks.ReadExistingHenvendelseIdsTask
 import no.nav.henvendelsemigrator.tasks.TaskManager
 import no.nav.henvendelsemigrator.tasks.taskRoutes
@@ -36,8 +37,8 @@ fun runApplication(config: Config) {
         KafkaUtils.consumerConfig("henvendelse-kafka-migrator-consumer", "henvendelse-kafka-migrator-consumer", config)
     )
     val taskManager = TaskManager(
-//        ReadHenvendelseTask(henvendelseDb, henvendelseArkivDb, kafkaProducer),
-        ReadExistingHenvendelseIdsTask(henvendelseDb, kafkaProducer)
+        ReadExistingHenvendelseIdsTask(henvendelseDb, kafkaProducer),
+        ProcessChangesTask(kafkaConsumer, kafkaProducer, henvendelseDb, henvendelseArkivDb)
     )
 
     val healthchecks: List<Healthcheck> = listOf(

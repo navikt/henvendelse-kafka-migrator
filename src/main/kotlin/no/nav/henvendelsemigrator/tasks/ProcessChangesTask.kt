@@ -5,6 +5,7 @@ import kotliquery.Row
 import no.nav.henvendelsemigrator.domain.*
 import no.nav.henvendelsemigrator.infrastructure.HealthcheckedDataSource
 import no.nav.henvendelsemigrator.infrastructure.health.Healthcheck
+import no.nav.henvendelsemigrator.infrastructure.health.HealthcheckResult
 import no.nav.henvendelsemigrator.utils.XMLParser
 import no.nav.henvendelsemigrator.utils.executeQuery
 import no.nav.henvendelsemigrator.utils.kafka.KafkaUtils
@@ -72,7 +73,43 @@ class ProcessChangesTask(
         processed = processed
     )
 
-    override fun toHealtchCheck() = Healthcheck.byRunning(name) {}
+    override fun toHealtchCheck() = Healthcheck {
+        val start = System.currentTimeMillis()
+        try {
+            executeQuery(
+                henvendelseDb, "SELECT henvendelse_id FROM HENVENDELSE WHERE behandlingsid = ? OR behandlingsid = ?",
+                {
+                    it.setString(1, "11pg") // LocalTest
+                    it.setString(2, "1000C4YTW") // OracleTest
+                },
+                { rs ->
+                    var description: String? = null
+                    for (it in Row(rs)) {
+                        val henvendelseId = it.string("henvendelse_id").toLong()
+                        val henvendelser = hentHenvendelser(listOf(henvendelseId))
+                        val arkivpostIds: List<Long> = henvendelser.mapNotNull { it.arkivpostId?.toLong() }
+                        val arkivposter: Map<Long, OracleArkivpost> = hentArkivposter(arkivpostIds)
+                        val vedlegg: Map<Long, OracleVedlegg> = hentVedlegg(arkivpostIds)
+                        val hendelser: Map<Long, List<OracleHendelse>> = hentHendelser(listOf(henvendelseId))
+                        val sammenslatt = processHenvendelse(
+                            henvendelse = henvendelser.first(),
+                            hendelser = hendelser[henvendelser.first().henvendelseId] ?: emptyList(),
+                            arkivpost = arkivpostIds.first()?.let { arkivposter[it] },
+                            vedlegg = arkivpostIds.first()?.let { vedlegg[it] }
+                        )
+                        description = sammenslatt.toJson()
+                    }
+                    if (description == null) {
+                        HealthcheckResult.Error(name, System.currentTimeMillis() - start, IllegalStateException("No matching rows found"))
+                    } else {
+                        HealthcheckResult.Ok(name, System.currentTimeMillis() - start, description)
+                    }
+                }
+            )
+        } catch (throwable: Throwable) {
+            HealthcheckResult.Error(name, System.currentTimeMillis() - start, throwable)
+        }
+    }
 
     private fun process(records: ConsumerRecords<String, String>) {
         records
@@ -143,7 +180,7 @@ class ProcessChangesTask(
             behandlingsId = henvendelse.behandlingsId,
             behandlingskjedeId = henvendelse.behandlingsKjedeId,
             applikasjonsId = null, // Settes aldri av henvendelse
-            fnr = arkivpost?.fodselsnummer,
+            fnr = arkivpost?.fodselsnummer, // TODO() Hva om arkivpost er null, hente fra aktor_fnr_mapping...
             aktorId = henvendelse.aktor,
             tema = henvendelse.tema,
             behandlingstema = henvendelse.behandlingstema,
@@ -161,20 +198,22 @@ class ProcessChangesTask(
             henvendelseIdGsak = henvendelse.henvendelseIdGsak,
             erTilknyttetAnsatt = henvendelse.erTilknyttetAnsatt,
             gjeldendeTemagruppe = hendelsemap[HendelseKeys.endretTemagruppe]?.lastOrNull()?.verdi?.let { Temagruppe.valueOf(it) },
-            journalfortInformasjon = JournalfortInformasjon(
-                journalpostId = henvendelse.journalportId,
-                journalfortTema = henvendelse.journalfortTema,
-                journalfortDato = tilknyttning?.dato?.atZone(ZoneId.systemDefault()),
-                journalfortSaksId = henvendelse.journalfortSaksid,
-                journalforerNavIdent = tilknyttning?.aktor
-            ),
+            journalfortInformasjon = henvendelse.journalpostId?.let {
+                JournalfortInformasjon(
+                    journalpostId = henvendelse.journalpostId,
+                    journalfortTema = henvendelse.journalfortTema,
+                    journalfortDato = tilknyttning?.dato?.atZone(ZoneId.systemDefault()),
+                    journalfortSaksId = henvendelse.journalfortSaksid,
+                    journalforerNavIdent = tilknyttning?.aktor
+                )
+            },
             markeringer = Markeringer(
                 kontorsperre = kontorsperre,
                 feilsendt = feilsendt,
                 ferdigstiltUtenSvar = ferdigstiltUtenSvar
             ),
             korrelasjonsId = henvendelse.korrelasjonsId,
-            metadataListe = MetadataListe(melding?.let { listOf(it) })
+            metadataListe = if (melding == null) null else { MetadataListe(listOf(melding)) }
         )
     }
 
@@ -220,7 +259,8 @@ class ProcessChangesTask(
             process = { rs ->
                 Row(rs).map { it.toHendelse() }.toList()
             }
-        ).groupBy { it.henvendelseId }
+        )   .sortedBy { it.dato }
+            .groupBy { it.henvendelseId }
     }
 
     fun hentArkivposter(arkivpostIds: List<Long>): Map<Long, OracleArkivpost> {
