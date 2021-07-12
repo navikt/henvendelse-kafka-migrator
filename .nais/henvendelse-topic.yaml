@@ -21,3 +21,6 @@ spec:
     - team: personoversikt
       application: henvendelse-kafka-migrator
       access: readwrite   # read, write, readwrite
+    - team: teamnks
+      application: sf-henvendelse-kafka
+      access: read
