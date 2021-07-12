@@ -14,16 +14,27 @@ class HealthcheckableKafkaConsumer<K, V>(properties: Properties) : KafkaConsumer
         this.groupMetadata()
     }
     private var healthcheckResult: HealthcheckResult = runBlocking { healthcheck.check() }
+    private var lastHealthcheck = System.currentTimeMillis()
     private var requestHealthcheck = false
+    private val healthcheckInterval = 30_000L
 
     init {
         timer.scheduleAtFixedRate(
             object : TimerTask() {
                 override fun run() {
-                    requestHealthcheck = true
+                    val now = System.currentTimeMillis()
+                    if (now - lastHealthcheck > 4 * healthcheckInterval) {
+                        // Assume polling is not active, and it's safe to check directly
+                        runBlocking {
+                            healthcheckResult = healthcheck.check()
+                            lastHealthcheck = now
+                        }
+                    } else {
+                        requestHealthcheck = true
+                    }
                 }
             },
-            30_000, 30_000
+            healthcheckInterval, healthcheckInterval
         )
     }
 
