@@ -1,5 +1,6 @@
 package no.nav.henvendelsemigrator.domain
 
+import com.fasterxml.jackson.annotation.JsonProperty
 import java.time.ZonedDateTime
 
 enum class Temagruppe {
@@ -38,9 +39,9 @@ enum class HenvendelseType {
 }
 
 class Henvendelse(
-    val henvendelseId: Long?,
-    val behandlingsId: String?,
-    val behandlingskjedeId: String?,
+    val henvendelseId: Long,
+    val behandlingsId: String,
+    val behandlingskjedeId: String,
     val applikasjonsId: String?,
     val fnr: String?,
     val aktorId: String?,
@@ -64,7 +65,10 @@ class Henvendelse(
     val markeringer: Markeringer?,
     val korrelasjonsId: String?,
     val metadataListe: MetadataListe?
-)
+) {
+    @JsonProperty("KAFKA_MESSAGE_VERSION")
+    private val KAFKA_MESSAGE_VERSION: String = "1.0"
+}
 
 class JournalfortInformasjon(
     val journalpostId: String?,
