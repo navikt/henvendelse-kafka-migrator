@@ -9,7 +9,6 @@ import kotliquery.queryOf
 import kotliquery.sessionOf
 import kotliquery.using
 import no.nav.henvendelsemigrator.infrastructure.HealthcheckedDataSource
-import org.apache.kafka.clients.consumer.KafkaConsumer
 import org.apache.kafka.clients.producer.KafkaProducer
 
 fun interface Healthcheck {
@@ -62,9 +61,5 @@ fun HealthcheckedDataSource.toHealthcheck(database: String) = Healthcheck.byRunn
 }
 
 fun KafkaProducer<*, *>.toHealthcheck(topic: String) = Healthcheck.byRunning("KafkaProducer - $topic") {
-    this.partitionsFor(topic)
-}
-
-fun KafkaConsumer<*, *>.toHealthcheck(topic: String) = Healthcheck.byRunning("KafkaConsumer - $topic") {
     this.partitionsFor(topic)
 }

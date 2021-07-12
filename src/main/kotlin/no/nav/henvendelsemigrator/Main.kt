@@ -7,8 +7,8 @@ import no.nav.henvendelsemigrator.infrastructure.*
 import no.nav.henvendelsemigrator.infrastructure.health.Healthcheck
 import no.nav.henvendelsemigrator.infrastructure.health.toHealthcheck
 import no.nav.henvendelsemigrator.tasks.*
+import no.nav.henvendelsemigrator.utils.kafka.HealthcheckableKafkaConsumer
 import no.nav.henvendelsemigrator.utils.kafka.KafkaUtils
-import org.apache.kafka.clients.consumer.KafkaConsumer
 import org.apache.kafka.clients.producer.KafkaProducer
 import org.slf4j.LoggerFactory
 import java.util.*
@@ -30,7 +30,7 @@ fun runApplication(config: Config) {
     val kafkaProducer = KafkaProducer<String, String>(
         KafkaUtils.producerConfig("henvendelse-kafka-migrator-producer", config)
     )
-    val kafkaConsumer = KafkaConsumer<String, String>(
+    val kafkaConsumer = HealthcheckableKafkaConsumer<String, String>(
         KafkaUtils.consumerConfig("henvendelse-kafka-migrator-consumer", "henvendelse-kafka-migrator-consumer", config)
     )
     val readExistingHenvendelseIdsTask = ReadExistingHenvendelseIdsTask(henvendelseDb, kafkaProducer)
@@ -49,9 +49,9 @@ fun runApplication(config: Config) {
     val healthchecks: List<Healthcheck> = listOf(
         henvendelseDb.toHealthcheck("henvendelse"),
         henvendelseArkivDb.toHealthcheck("henvendelsearkiv"),
+        kafkaConsumer,
         kafkaProducer.toHealthcheck(KafkaUtils.endringsloggTopic),
-        Healthcheck { processChangesTask.consumerHealthcheck },
-        Healthcheck { processChangesTask.producerHealthcheck },
+        kafkaProducer.toHealthcheck(KafkaUtils.henvendelseTopic),
         *taskManager.taskmap.values.map { it.toHealtchCheck() }.toTypedArray()
     )
 

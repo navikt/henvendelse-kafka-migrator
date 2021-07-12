@@ -6,7 +6,6 @@ import no.nav.henvendelsemigrator.domain.*
 import no.nav.henvendelsemigrator.infrastructure.HealthcheckedDataSource
 import no.nav.henvendelsemigrator.infrastructure.health.Healthcheck
 import no.nav.henvendelsemigrator.infrastructure.health.HealthcheckResult
-import no.nav.henvendelsemigrator.infrastructure.health.toHealthcheck
 import no.nav.henvendelsemigrator.log
 import no.nav.henvendelsemigrator.utils.XMLParser
 import no.nav.henvendelsemigrator.utils.executeQuery
@@ -37,8 +36,6 @@ class ProcessChangesTask(
     private var endTime: LocalDateTime? = null
     private var processed: Int = 0
     private val xmlParser = XMLParser()
-    var consumerHealthcheck: HealthcheckResult = HealthcheckResult.Ok("N/A", 0, "Not checked yet")
-    var producerHealthcheck: HealthcheckResult = HealthcheckResult.Ok("N/A", 0, "Not checked yet")
 
     init {
         if (autoStart) {
@@ -51,15 +48,12 @@ class ProcessChangesTask(
     override suspend fun start() {
         if (process != null) throw IllegalStateException("Task $name is already running")
         withContext(Dispatchers.IO) {
-            println("Starting $name ${LocalDateTime.now()}")
+            log.info("Starting $name ${LocalDateTime.now()}")
             startingTime = LocalDateTime.now()
             endTime = null
             process = GlobalScope.launch {
                 consumer.subscribe(listOf(KafkaUtils.endringsloggTopic))
-
                 while (isRunning()) {
-                    consumerHealthcheck = consumer.toHealthcheck(KafkaUtils.endringsloggTopic).check()
-                    producerHealthcheck = producer.toHealthcheck(KafkaUtils.henvendelseTopic).check()
                     val records: ConsumerRecords<String, String> = consumer.poll(Duration.ofMillis(10_000))
                     log.info("Polled records from kafka, got ${records.count()} record(s).")
                     val start = System.currentTimeMillis()
@@ -68,8 +62,9 @@ class ProcessChangesTask(
                     log.info("Processed ${records.count()} records in ${System.currentTimeMillis() - start}ms")
                 }
                 consumer.unsubscribe()
+                log.info("Stopped task $name")
             }
-            println("Started $name ${LocalDateTime.now()}")
+            log.info("Started $name ${LocalDateTime.now()}")
         }
     }
 
