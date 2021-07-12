@@ -12,7 +12,7 @@ import org.apache.kafka.clients.producer.ProducerRecord
 
 class ReadExistingHenvendelseIdsTask(
     val henvendelseDb: HealthcheckedDataSource,
-    val kafka: KafkaProducer<String, String>
+    val producer: KafkaProducer<String, String>
 ) : SimpleTask() {
     override val name: String = requireNotNull(ReadExistingHenvendelseIdsTask::class.simpleName)
     override val description: String = """
@@ -31,7 +31,7 @@ class ReadExistingHenvendelseIdsTask(
         executeQuery(henvendelseDb, query) { rs ->
             Row(rs).forEach {
                 val henvendelseId = it.string("henvendelse_id")
-                kafka.send(ProducerRecord(KafkaUtils.endringsloggTopic, henvendelseId, henvendelseId))
+                producer.send(ProducerRecord(KafkaUtils.endringsloggTopic, henvendelseId, henvendelseId))
                 processed++
             }
         }

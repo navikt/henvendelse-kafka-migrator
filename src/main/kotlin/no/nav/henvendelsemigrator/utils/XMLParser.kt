@@ -51,7 +51,6 @@ class XMLParser {
                     ?.textContent
                     ?.let { Kanal.valueOf(it) },
                 navident = evalNodeSet(navidentPath, document)?.item(0)?.textContent
-
             )
         }
     }

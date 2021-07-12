@@ -180,7 +180,7 @@ fun PreparedStatement.addVedleggToBatch(vedlegg: OracleVedlegg) {
     setString(5, vedlegg.tittel)
     setString(6, vedlegg.brevkode)
     setInt(7, vedlegg.strukturert.asNumeric())
-    setBytes(8, vedlegg.dokument)
+    setString(8, String(vedlegg.dokument!!))
 
     addBatch()
     clearParameters()
@@ -300,7 +300,7 @@ fun lagVedlegg(henvendelseId: Long) = OracleVedlegg(
         <ns2:metadataListe xmlns:ns2="http://nav.no/melding/domene/brukerdialog/behandlingsinformasjon/v1">
             <metadata xsi:type="ns2:meldingFraBruker" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
                 <temagruppe>ARBD</temagruppe>
-                <fritekst>hei jeg lurer pÃ¥ nÃ¥r jeg blir innkalt til videre samtale ang min situasjon da jeg gÃ¥r pÃ¥ arbeidsavklaring stÃ¸nad.
+                <fritekst>hei jeg lurer på når jeg blir innkalt til videre samtale ang min situasjon da jeg går på arbeidsavklaring stønad.
          Min id: $henvendelseId (${henvendelseId.toString(36)})
                 </fritekst>
             </metadata>
@@ -309,7 +309,7 @@ fun lagVedlegg(henvendelseId: Long) = OracleVedlegg(
         <ns2:metadataListe xmlns:ns2="http://nav.no/melding/domene/brukerdialog/behandlingsinformasjon/v1">
             <metadata xsi:type="ns2:meldingTilBruker" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
                 <temagruppe>UFRT</temagruppe>
-                <fritekst>Bekrefter at siste utbetaling gjelder november mÃ¥ned og at utbetaling for desember vil utbetales i lÃ¸pet av uke 50.
+                <fritekst>Bekrefter at siste utbetaling gjelder november måned og at utbetaling for desember vil utbetales i løpet av uke 50.
             Dette er min id: $henvendelseId (${henvendelseId.toString(36)})
                 </fritekst>
                 <kanal>TELEFON</kanal>

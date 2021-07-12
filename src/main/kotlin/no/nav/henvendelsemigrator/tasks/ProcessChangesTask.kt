@@ -6,6 +6,8 @@ import no.nav.henvendelsemigrator.domain.*
 import no.nav.henvendelsemigrator.infrastructure.HealthcheckedDataSource
 import no.nav.henvendelsemigrator.infrastructure.health.Healthcheck
 import no.nav.henvendelsemigrator.infrastructure.health.HealthcheckResult
+import no.nav.henvendelsemigrator.infrastructure.health.toHealthcheck
+import no.nav.henvendelsemigrator.log
 import no.nav.henvendelsemigrator.utils.XMLParser
 import no.nav.henvendelsemigrator.utils.executeQuery
 import no.nav.henvendelsemigrator.utils.kafka.KafkaUtils
@@ -15,16 +17,16 @@ import org.apache.kafka.clients.consumer.ConsumerRecords
 import org.apache.kafka.clients.consumer.KafkaConsumer
 import org.apache.kafka.clients.producer.KafkaProducer
 import org.apache.kafka.clients.producer.ProducerRecord
-import java.nio.charset.Charset
 import java.time.Duration
 import java.time.LocalDateTime
 import java.time.ZoneId
 
 class ProcessChangesTask(
-    val consumer: KafkaConsumer<String, String>,
-    val producer: KafkaProducer<String, String>,
-    val henvendelseDb: HealthcheckedDataSource,
-    val henvendelseArkivDb: HealthcheckedDataSource,
+    private val autoStart: Boolean,
+    private val consumer: KafkaConsumer<String, String>,
+    private val producer: KafkaProducer<String, String>,
+    private val henvendelseDb: HealthcheckedDataSource,
+    private val henvendelseArkivDb: HealthcheckedDataSource,
 ) : Task {
     override val name = requireNotNull(ProcessChangesTask::class.simpleName)
     override val description = """
@@ -35,6 +37,16 @@ class ProcessChangesTask(
     private var endTime: LocalDateTime? = null
     private var processed: Int = 0
     private val xmlParser = XMLParser()
+    var consumerHealthcheck: HealthcheckResult = HealthcheckResult.Ok("N/A", 0, "Not checked yet")
+    var producerHealthcheck: HealthcheckResult = HealthcheckResult.Ok("N/A", 0, "Not checked yet")
+
+    init {
+        if (autoStart) {
+            runBlocking {
+                start()
+            }
+        }
+    }
 
     override suspend fun start() {
         if (process != null) throw IllegalStateException("Task $name is already running")
@@ -42,13 +54,20 @@ class ProcessChangesTask(
             println("Starting $name ${LocalDateTime.now()}")
             startingTime = LocalDateTime.now()
             endTime = null
-            consumer.subscribe(listOf(KafkaUtils.endringsloggTopic))
             process = GlobalScope.launch {
+                consumer.subscribe(listOf(KafkaUtils.endringsloggTopic))
+
                 while (isRunning()) {
+                    consumerHealthcheck = consumer.toHealthcheck(KafkaUtils.endringsloggTopic).check()
+                    producerHealthcheck = producer.toHealthcheck(KafkaUtils.henvendelseTopic).check()
                     val records: ConsumerRecords<String, String> = consumer.poll(Duration.ofMillis(10_000))
+                    log.info("Polled records from kafka, got ${records.count()} record(s).")
+                    val start = System.currentTimeMillis()
                     process(records)
                     consumer.commitSync()
+                    log.info("Processed ${records.count()} records in ${System.currentTimeMillis() - start}ms")
                 }
+                consumer.unsubscribe()
             }
             println("Started $name ${LocalDateTime.now()}")
         }
@@ -56,7 +75,6 @@ class ProcessChangesTask(
 
     override suspend fun stop() {
         if (process == null) throw IllegalStateException("Task $name is not running")
-        consumer.unsubscribe()
         process?.cancel()
         process = null
     }
@@ -224,7 +242,7 @@ class ProcessChangesTask(
         val content: String = if (henvendelse.behandlingsresultat != null) {
             henvendelse.behandlingsresultat
         } else if (vedlegg?.dokument != null) {
-            String(vedlegg.dokument, Charset.forName("ISO-8859-1"))
+            String(vedlegg.dokument)
         } else {
             throw IllegalStateException("Fant verken behandlingsresultat eller vedlegg")
         }

@@ -36,17 +36,25 @@ fun runApplication(config: Config) {
     val kafkaConsumer = KafkaConsumer<String, String>(
         KafkaUtils.consumerConfig("henvendelse-kafka-migrator-consumer", "henvendelse-kafka-migrator-consumer", config)
     )
+    val readExistingHenvendelseIdsTask = ReadExistingHenvendelseIdsTask(henvendelseDb, kafkaProducer)
+    val processChangesTask = ProcessChangesTask(
+        autoStart = true,
+        consumer = kafkaConsumer,
+        producer = kafkaProducer,
+        henvendelseDb = henvendelseDb,
+        henvendelseArkivDb = henvendelseArkivDb
+    )
     val taskManager = TaskManager(
-        ReadExistingHenvendelseIdsTask(henvendelseDb, kafkaProducer),
-        ProcessChangesTask(kafkaConsumer, kafkaProducer, henvendelseDb, henvendelseArkivDb)
+        readExistingHenvendelseIdsTask,
+        processChangesTask
     )
 
     val healthchecks: List<Healthcheck> = listOf(
         henvendelseDb.toHealthcheck("henvendelse"),
         henvendelseArkivDb.toHealthcheck("henvendelsearkiv"),
-        kafkaProducer.toHealthcheck(KafkaUtils.henvendelseTopic),
         kafkaProducer.toHealthcheck(KafkaUtils.endringsloggTopic),
-        kafkaConsumer.toHealthcheck(KafkaUtils.endringsloggTopic),
+        Healthcheck { processChangesTask.consumerHealthcheck },
+        Healthcheck { processChangesTask.producerHealthcheck },
         *taskManager.taskmap.values.map { it.toHealtchCheck() }.toTypedArray()
     )
 
