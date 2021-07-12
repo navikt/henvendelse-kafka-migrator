@@ -19,7 +19,7 @@ object KafkaUtils {
     fun producerConfig(clientId: String, config: Config): Properties {
         val properties = Properties()
         properties[ProducerConfig.ACKS_CONFIG] = "all"
-        properties[ProducerConfig.LINGER_MS_CONFIG] = 500
+        properties[ProducerConfig.LINGER_MS_CONFIG] = 1000
         properties[ProducerConfig.CLIENT_ID_CONFIG] = clientId
         properties[ProducerConfig.BOOTSTRAP_SERVERS_CONFIG] = config.kafkaBrokers
 
