@@ -11,6 +11,9 @@ body {
 body > h1 {
     margin: 0 1rem;
 }
+.healthchecks, .debug-wrapper, .tasks-wrapper {
+    margin-bottom: 1rem;
+}
 .healthchecks {
     margin: 1rem 0;
 }
@@ -34,4 +37,12 @@ body > h1 {
 .healthchecks .healthcheck :is(.stacktrace,.description) {
     max-height: 25rem;
     overflow-y: scroll;
+}
+.debug-wrapper {
+    margin: 1rem;
+}
+.debug-output {
+    padding: 1rem;
+    background-color: lightgrey;
+    border: 1px solid black;
 }

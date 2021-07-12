@@ -133,17 +133,20 @@ class ProcessChangesTask(
         records
             .map { it.value().toLong() }
             .chunked(1000)
-            .forEach(::processChunk)
+            .flatMap(::processChunk)
+            .forEach {
+                producer.send(ProducerRecord(KafkaUtils.henvendelseTopic, it.henvendelseId.toString(), it.toJson()))
+            }
     }
 
-    private fun processChunk(henvendelseIds: List<Long>) {
+    fun processChunk(henvendelseIds: List<Long>): List<Henvendelse> {
         val henvendelser: List<OracleHenvendelse> = hentHenvendelser(henvendelseIds)
         val arkivpostIds: List<Long> = henvendelser.mapNotNull { it.arkivpostId?.toLong() }
         val hendelser: Map<Long, List<OracleHendelse>> = hentHendelser(henvendelseIds)
         val arkivposter: Map<Long, OracleArkivpost> = hentArkivposter(arkivpostIds)
         val vedlegg: Map<Long, OracleVedlegg> = hentVedlegg(arkivpostIds)
 
-        henvendelser
+        return henvendelser
             .map { henvendelse ->
                 val arkivpostId = henvendelse.arkivpostId?.toLong()
                 processHenvendelse(
@@ -152,8 +155,6 @@ class ProcessChangesTask(
                     arkivpost = arkivpostId?.let { arkivposter[it] },
                     vedlegg = arkivpostId?.let { vedlegg[it] }
                 )
-            }.forEach {
-                producer.send(ProducerRecord(KafkaUtils.henvendelseTopic, it.henvendelseId.toString(), it.toJson()))
             }
     }
 

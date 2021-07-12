@@ -20,7 +20,7 @@ function el(type, props, content) {
     return element;
 }
 
-async function getHealthchecks() {
+async function createHealthchecksView() {
     const response = await fetch('/henvendelse-kafka-migrator/internal/healthchecks');
     const json = await response.json();
     const container = document.querySelector('.healthchecks');
@@ -50,7 +50,34 @@ async function repeat(fn) {
     } while (true)
 }
 
-async function getTasks() {
+async function createDebugView() {
+    const container = document.querySelector('.debug-wrapper');
+    container.appendChild(el('section', {}, [
+        el('form', { className: 'processing' }, [
+            el('label', {}, [
+                'HenvendelseID',
+                el('input', { type: 'text' })
+            ]),
+            el('button', {}, 'Søk')
+        ])
+    ]));
+    container.appendChild(el('pre', { className: 'debug-output'}))
+    document.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        if (e.target.className === 'processing') {
+            console.log('processing', e);
+            const henvendelseId = e.target.querySelector('input').value;
+            const response = await fetch('/henvendelse-kafka-migrator/internal/debug/processing', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ henvendelseId })
+            });
+            document.querySelector('.debug-output').textContent = await response.text();
+        }
+    });
+}
+
+async function createTasksView() {
     const response = await fetch('/henvendelse-kafka-migrator/task');
     const tasks = await response.json();
     Object.values(tasks).forEach(renderTask)
@@ -102,7 +129,7 @@ function renderTask(taskstatus) {
     }
 }
 
-function addTaskActions() {
+function addTaskActionListeners() {
     const taskmap = {
         start: async (task) => {
             await fetch(`/henvendelse-kafka-migrator/task/${task}/start`, { method: 'POST' });
@@ -124,8 +151,9 @@ function addTaskActions() {
     })
 }
 
-(async function() {
-    getHealthchecks();
-    addTaskActions()
-    repeat(getTasks);
+(function() {
+    createHealthchecksView();
+    createDebugView();
+    addTaskActionListeners();
+    repeat(createTasksView);
 })();

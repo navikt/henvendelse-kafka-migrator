@@ -6,10 +6,7 @@ import io.ktor.routing.*
 import no.nav.henvendelsemigrator.infrastructure.*
 import no.nav.henvendelsemigrator.infrastructure.health.Healthcheck
 import no.nav.henvendelsemigrator.infrastructure.health.toHealthcheck
-import no.nav.henvendelsemigrator.tasks.ProcessChangesTask
-import no.nav.henvendelsemigrator.tasks.ReadExistingHenvendelseIdsTask
-import no.nav.henvendelsemigrator.tasks.TaskManager
-import no.nav.henvendelsemigrator.tasks.taskRoutes
+import no.nav.henvendelsemigrator.tasks.*
 import no.nav.henvendelsemigrator.utils.kafka.KafkaUtils
 import org.apache.kafka.clients.consumer.KafkaConsumer
 import org.apache.kafka.clients.producer.KafkaProducer
@@ -71,6 +68,7 @@ fun runApplication(config: Config) {
                     defaultResource("index.html", "webapp")
                 }
                 taskRoutes(taskManager)
+                debugRoutes(processChangesTask)
             }
         }
     }.start(wait = true)
