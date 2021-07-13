@@ -4,12 +4,10 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import io.ktor.application.Application
 import io.ktor.application.install
 import io.ktor.auth.*
-import io.ktor.features.CORS
 import io.ktor.features.CallLogging
 import io.ktor.features.ContentNegotiation
 import io.ktor.features.StatusPages
 import io.ktor.http.ContentType
-import io.ktor.http.HttpMethod
 import io.ktor.jackson.JacksonConverter
 import io.ktor.metrics.dropwizard.DropwizardMetrics
 import io.ktor.request.path

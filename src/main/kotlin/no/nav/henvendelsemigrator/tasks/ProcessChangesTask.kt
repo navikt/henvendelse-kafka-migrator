@@ -294,6 +294,7 @@ class ProcessChangesTask(
     }
 
     fun hentArkivposter(arkivpostIds: List<Long>): Map<Long, OracleArkivpost> {
+        if (arkivpostIds.isEmpty()) return emptyMap()
         return executeQuery(
             dataSource = henvendelseArkivDb,
             query = "SELECT * FROM arkivpost WHERE arkivpostid in (${paramlist(arkivpostIds.size)})",
@@ -309,6 +310,7 @@ class ProcessChangesTask(
     }
 
     fun hentVedlegg(arkivpostIds: List<Long>): Map<Long, OracleVedlegg> {
+        if (arkivpostIds.isEmpty()) return emptyMap()
         return executeQuery(
             dataSource = henvendelseArkivDb,
             query = "SELECT * FROM vedlegg WHERE arkivpostid in (${paramlist(arkivpostIds.size)})",
