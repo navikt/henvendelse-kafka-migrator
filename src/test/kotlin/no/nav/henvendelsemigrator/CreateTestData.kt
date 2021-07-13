@@ -17,11 +17,14 @@ data class Ingest(
     val arkivpost: OracleArkivpost? = null,
     val vedlegg: OracleVedlegg? = null
 ) {
-    fun getAktorId(): String = "100001" + (henvendelse.henvendelseId.toString().padStart(7, '0'))
-    fun getFnr(): String = "012" + (henvendelse.henvendelseId.toString().padStart(7, '0'))
+    fun getAktorId(): String = henvendelseIdToAktorId(henvendelse.henvendelseId)
+    fun getFnr(): String = henvendelseIdToFnr(henvendelse.henvendelseId)
     fun overfortTilArkiv(): Ingest {
         return this.copy(
-            henvendelse = henvendelse.copy(behandlingsresultat = null),
+            henvendelse = henvendelse.copy(
+                behandlingsresultat = null,
+                aktor = getAktorId()
+            ),
             arkivpost = lagArkivpost(
                 henvendelseId = this.henvendelse.henvendelseId,
                 aktoerid = getAktorId(),
@@ -31,6 +34,8 @@ data class Ingest(
         )
     }
 }
+fun henvendelseIdToAktorId(henvendelseId: Long) = "100001" + (henvendelseId.toString().padStart(7, '0'))
+fun henvendelseIdToFnr(henvendelseId: Long) = "012" + (henvendelseId.toString().padStart(7, '0'))
 
 fun main() {
     val config = LocalConfig()
@@ -198,7 +203,7 @@ fun lagHenvendelse(henvendelseId: Long) = OracleHenvendelse(
     behandlingsKjedeId = henvendelseId.toString(36),
     type = "SPORSMAL_MODIA_UTGAAENDE",
     tema = "BID",
-    aktor = "1000012345678",
+    aktor = henvendelseIdToAktorId(henvendelseId),
     status = "FERDIG",
     opprettetdato = LocalDateTime.now().minusDays(1),
     innsendtdato = LocalDateTime.now().minusDays(1),
@@ -234,7 +239,7 @@ fun lagHenvendelse(henvendelseId: Long) = OracleHenvendelse(
     kontorsperre = "1234",
     oppgaveIdGsak = "12345678",
     henvendelseIdGsak = "ABBA123456",
-    eksternAktor = "0123456791",
+    eksternAktor = "Z999999",
     tilknyttetEnhet = "1234",
     erTilknyttetAnsatt = true,
     brukersEnhet = "123456",
@@ -253,7 +258,7 @@ fun lagHendelser(henvendelseId: Long) = listOf(
 fun lagHendelse(i: Int, henvendelseId: Long) = OracleHendelse(
     id = henvendelseId * 4 + i,
     henvendelseId = henvendelseId,
-    aktor = "1000012345678",
+    aktor = henvendelseIdToAktorId(henvendelseId),
     type = when (i) {
         0 -> "HENVENDELSE_OPPRETTET"
         1 -> "HENVENDELSE_AVSLUTTET"
