@@ -1,4 +1,4 @@
-domene: "dev.intern.nav.no"
+domene: "app-q0.adeo.no"
 environment: "q0"
 kafka:
   pool: "nav-dev"

@@ -1,4 +1,4 @@
-domene: "intern.nav.no"
+domene: "app.adeo.no"
 environment: "p"
 kafka:
   pool: "nav-prod"
