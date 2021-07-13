@@ -39,7 +39,7 @@ fun runApplication(config: Config) {
     )
     val readExistingHenvendelseIdsTask = ReadExistingHenvendelseIdsTask(henvendelseDb, kafkaProducer)
     val processChangesTask = ProcessChangesTask(
-        autoStart = true,
+        autoStart = false,
         consumer = kafkaConsumer,
         producer = kafkaProducer,
         henvendelseDb = henvendelseDb,
