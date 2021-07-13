@@ -31,7 +31,8 @@ fun <T> executeQuery(
 ): T {
     return when (dataSource) {
         is HealthcheckedDataSource.Error -> throw dataSource.throwable
-        is HealthcheckedDataSource.Ok -> using(dataSource.dataSource.connection.prepareStatement(query)) { statement ->
+        is HealthcheckedDataSource.Ok -> using(dataSource.dataSource.connection) { connection ->
+            val statement = connection.prepareStatement(query)
             statement.fetchSize = 1000
             statement.fetchDirection = ResultSet.FETCH_FORWARD
             setVars(statement)
