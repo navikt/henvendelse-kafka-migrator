@@ -15,10 +15,8 @@ spec:
     pool: {{kafka.pool}}
   liveness:
     path: /henvendelse-kafka-migrator/internal/isAlive
-    initialDelay: 60
   readiness:
     path: /henvendelse-kafka-migrator/internal/isReady
-    initialDelay: 60
   prometheus:
     enabled: true
     path: /henvendelse-kafka-migrator/internal/metrics
