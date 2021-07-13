@@ -14,14 +14,14 @@ spec:
   kafka:
     pool: {{kafka.pool}}
   liveness:
-    path: isAlive
+    path: /henvendelse-kafka-migrator/internal/isAlive
     initialDelay: 60
   readiness:
-    path: isReady
+    path: /henvendelse-kafka-migrator/internal/isReady
     initialDelay: 60
   prometheus:
     enabled: true
-    path: /prometheus
+    path: /henvendelse-kafka-migrator/internal/metrics
   replicas:
     min: 1
     max: 1
