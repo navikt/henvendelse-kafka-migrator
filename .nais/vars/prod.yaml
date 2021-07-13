@@ -1,0 +1,8 @@
+domene: "intern.nav.no"
+environment: "p"
+kafka:
+  pool: "nav-prod"
+  removeDataWhenDeleted: "true"
+secrets:
+  env: "prod"
+  namespace: ""

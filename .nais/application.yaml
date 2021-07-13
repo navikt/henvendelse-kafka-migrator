@@ -1,0 +1,57 @@
+---
+kind: Application
+apiVersion: nais.io/v1alpha1
+metadata:
+  name: henvendelse-kafka-migrator
+  namespace: personoversikt
+  labels:
+    team: personoversikt
+spec:
+  image: "{{image}}"
+  port: 8080
+  ingresses:
+    - https://{{domene}}/henvendelse-kafka-migrator
+  kafka:
+    pool: {{kafka.pool}}
+  liveness:
+    path: isAlive
+    initialDelay: 60
+  readiness:
+    path: isReady
+    initialDelay: 60
+  prometheus:
+    enabled: true
+    path: /prometheus
+  replicas:
+    min: 1
+    max: 1
+    cpuThresholdPercentage: 90
+  resources:
+    requests:
+      cpu: 250m
+      memory: 1536Mi
+    limits:
+      cpu: 4000m
+      memory: 2366Mi
+  vault:
+    enabled: true
+    paths:
+      - kvPath: /oracle/data/{{secrets.env}}/creds/henvendelsearkiv{{secrets.namespace}}-user
+        mountPath: /var/run/secrets/nais.io/db_henvendelsearkiv_user
+      - kvPath: /oracle/data/{{secrets.env}}/config/henvendelsearkiv{{secrets.namespace}}
+        mountPath: /var/run/secrets/nais.io/db_henvendelsearkiv_config
+
+      - kvPath: /oracle/data/{{secrets.env}}/creds/henvendelse{{secrets.namespace}}-user
+        mountPath: /var/run/secrets/nais.io/db_henvendelse_user
+      - kvPath: /oracle/data/{{secrets.env}}/config/henvendelse{{secrets.namespace}}
+        mountPath: /var/run/secrets/nais.io/db_henvendelse_config
+
+      - kvPath: /apikey/appdynamics/{{secrets.env}}
+        mountPath: /var/run/secrets/nais.io/vault
+  env:
+    - name: APP_NAME
+      value: "henvendelse-kafka-migrator"
+    - name: APP_VERSION
+      value: "{{ version }}"
+    - name: APP_ENVIRONMENT
+      value: "{{ environment }}"
