@@ -83,8 +83,7 @@ fun runApplication(config: Config) {
 class NaisConfig : Config, AutoKonfigAware() {
     override val henvendelseDbConfig = DbConfig.load("db_henvendelse")
     override val henvendelseArkivDbConfig = DbConfig.load("db_henvendelsearkiv")
-//    override val authConfig: AuthConfig = AuthConfig.JwksUrl(getRequiredProperty("ISSO_JWKS_URL"))
-    override val authConfig: AuthConfig = AuthConfig.UseMock("Z999999")
+    override val authConfig: AuthConfig = AuthConfig.JwksUrl(getRequiredProperty("ISSO_JWKS_URL"))
     override val kafkaSecurityConfig: (properties: Properties) -> Unit = KafkaUtils::aivenSecurityConfig
     override val kafkaBrokers by StringSetting()
 }
