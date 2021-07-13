@@ -7,7 +7,7 @@ metadata:
   labels:
     team: personoversikt
   annotations:
-    kafka.nais.io/removeDataWhenResourceIsDeleted: {{kafka.removeDataWhenDeleted}}
+    kafka.nais.io/removeDataWhenResourceIsDeleted: "{{kafka.removeDataWhenDeleted}}"
 spec:
   pool: {{kafka.pool}}
   config:  # optional; all fields are optional too; defaults shown
