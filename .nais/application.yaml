@@ -55,3 +55,5 @@ spec:
       value: "{{ version }}"
     - name: APP_ENVIRONMENT
       value: "{{ environment }}"
+    - name: ISSO_JWKS_URL
+      value: "{{ security.jwksUrl }}"

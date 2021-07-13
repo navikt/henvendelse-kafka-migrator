@@ -11,6 +11,7 @@ import no.nav.henvendelsemigrator.introspect.ProcessHenvendelseId
 import no.nav.henvendelsemigrator.introspect.ReadKafkaTopic
 import no.nav.henvendelsemigrator.introspect.introspectRoutes
 import no.nav.henvendelsemigrator.tasks.*
+import no.nav.henvendelsemigrator.utils.EnvUtils.getRequiredProperty
 import no.nav.henvendelsemigrator.utils.kafka.HealthcheckableKafkaConsumer
 import no.nav.henvendelsemigrator.utils.kafka.KafkaUtils
 import org.apache.kafka.clients.producer.KafkaProducer
@@ -82,7 +83,7 @@ fun runApplication(config: Config) {
 class NaisConfig : Config, AutoKonfigAware() {
     override val henvendelseDbConfig = DbConfig.load("db_henvendelse")
     override val henvendelseArkivDbConfig = DbConfig.load("db_henvendelsearkiv")
-    override val authConfig: AuthConfig = AuthConfig.JwksUrl("")
+    override val authConfig: AuthConfig = AuthConfig.JwksUrl(getRequiredProperty("ISSO_JWKS_URL"))
     override val kafkaSecurityConfig: (properties: Properties) -> Unit = KafkaUtils::aivenSecurityConfig
     override val kafkaBrokers by StringSetting()
 }

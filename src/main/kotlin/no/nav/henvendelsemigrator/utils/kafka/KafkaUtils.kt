@@ -1,6 +1,7 @@
 package no.nav.henvendelsemigrator.utils.kafka
 
 import no.nav.henvendelsemigrator.Config
+import no.nav.henvendelsemigrator.utils.EnvUtils.getRequiredProperty
 import no.nav.henvendelsemigrator.utils.kafka.KafkaEnvironmentVariables.KAFKA_CREDSTORE_PASSWORD
 import no.nav.henvendelsemigrator.utils.kafka.KafkaEnvironmentVariables.KAFKA_KEYSTORE_PATH
 import no.nav.henvendelsemigrator.utils.kafka.KafkaEnvironmentVariables.KAFKA_TRUSTSTORE_PATH
@@ -55,11 +56,5 @@ object KafkaUtils {
         properties[SslConfigs.SSL_KEYSTORE_PASSWORD_CONFIG] = getRequiredProperty(KAFKA_CREDSTORE_PASSWORD)
         properties[SslConfigs.SSL_TRUSTSTORE_LOCATION_CONFIG] = getRequiredProperty(KAFKA_TRUSTSTORE_PATH)
         properties[SslConfigs.SSL_TRUSTSTORE_PASSWORD_CONFIG] = getRequiredProperty(KAFKA_CREDSTORE_PASSWORD)
-    }
-
-    private fun getRequiredProperty(propertyName: String): String {
-        return requireNotNull(System.getProperty(propertyName, System.getenv(propertyName))) {
-            "Mangler property: $propertyName"
-        }
     }
 }

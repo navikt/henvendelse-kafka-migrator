@@ -6,3 +6,5 @@ kafka:
 secrets:
   env: "dev"
   namespace: "_q0"
+security:
+  jwksUrl: "https://isso-q.adeo.no/isso/oauth2/connect/jwk_uri"
