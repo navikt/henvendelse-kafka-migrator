@@ -13,7 +13,7 @@ data class ReadKafkaRequest(
 )
 data class KafkaRecord(val timestamp: Long, val offset: Long, val key: String, val value: Any)
 class ReadKafkaTopic(private val config: Config) : IntrospectionTask<ReadKafkaRequest, List<KafkaRecord>>(
-    name = "Read kakfa topic",
+    name = "Read kafka topic",
     description = "Read kafka topic",
     inputExample = ReadKafkaRequest(10, 100)
 ) {
