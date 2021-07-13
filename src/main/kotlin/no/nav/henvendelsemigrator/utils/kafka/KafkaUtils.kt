@@ -31,14 +31,14 @@ object KafkaUtils {
         return properties
     }
 
-    fun consumerConfig(groupId: String, clientId: String, config: Config): Properties {
+    fun consumerConfig(groupId: String?, clientId: String?, config: Config): Properties {
         val properties = Properties()
         properties[ConsumerConfig.AUTO_OFFSET_RESET_CONFIG] = "earliest"
         properties[ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG] = false
         properties[ConsumerConfig.MAX_POLL_RECORDS_CONFIG] = 1000
         properties[ConsumerConfig.MAX_POLL_INTERVAL_MS_CONFIG] = 1000 * 1500
-        properties[ConsumerConfig.GROUP_ID_CONFIG] = groupId
-        properties[ConsumerConfig.CLIENT_ID_CONFIG] = clientId
+        groupId?.also { properties[ConsumerConfig.GROUP_ID_CONFIG] = it }
+        clientId?.also { properties[ConsumerConfig.CLIENT_ID_CONFIG] = it }
         properties[CommonClientConfigs.BOOTSTRAP_SERVERS_CONFIG] = config.kafkaBrokers
 
         properties.apply(config.kafkaSecurityConfig)

@@ -6,6 +6,9 @@ import io.ktor.routing.*
 import no.nav.henvendelsemigrator.infrastructure.*
 import no.nav.henvendelsemigrator.infrastructure.health.Healthcheck
 import no.nav.henvendelsemigrator.infrastructure.health.toHealthcheck
+import no.nav.henvendelsemigrator.introspect.ProcessHenvendelseId
+import no.nav.henvendelsemigrator.introspect.ReadKafkaTopic
+import no.nav.henvendelsemigrator.introspect.introspectRoutes
 import no.nav.henvendelsemigrator.tasks.*
 import no.nav.henvendelsemigrator.utils.kafka.HealthcheckableKafkaConsumer
 import no.nav.henvendelsemigrator.utils.kafka.KafkaUtils
@@ -41,10 +44,6 @@ fun runApplication(config: Config) {
         henvendelseDb = henvendelseDb,
         henvendelseArkivDb = henvendelseArkivDb
     )
-    val taskManager = TaskManager(
-        readExistingHenvendelseIdsTask,
-        processChangesTask
-    )
 
     val healthchecks: List<Healthcheck> = listOf(
         henvendelseDb.toHealthcheck("henvendelse"),
@@ -52,7 +51,8 @@ fun runApplication(config: Config) {
         kafkaConsumer,
         kafkaProducer.toHealthcheck(KafkaUtils.endringsloggTopic),
         kafkaProducer.toHealthcheck(KafkaUtils.henvendelseTopic),
-        *taskManager.taskmap.values.map { it.toHealtchCheck() }.toTypedArray()
+        readExistingHenvendelseIdsTask.toHealtchCheck(),
+        processChangesTask.toHealtchCheck()
     )
 
     HttpServer.create(appname, 7075) { state ->
@@ -67,8 +67,11 @@ fun runApplication(config: Config) {
                     resources("webapp")
                     defaultResource("index.html", "webapp")
                 }
-                taskRoutes(taskManager)
-                debugRoutes(processChangesTask)
+                taskRoutes(readExistingHenvendelseIdsTask, processChangesTask)
+                introspectRoutes(
+                    ProcessHenvendelseId(processChangesTask),
+                    ReadKafkaTopic(config)
+                )
             }
         }
     }.start(wait = true)

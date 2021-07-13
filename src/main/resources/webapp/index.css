@@ -11,7 +11,7 @@ body {
 body > h1 {
     margin: 0 1rem;
 }
-.healthchecks, .debug-wrapper, .tasks-wrapper {
+.healthchecks, .introspection-wrapper, .tasks-wrapper {
     margin-bottom: 1rem;
 }
 .healthchecks {
@@ -38,10 +38,15 @@ body > h1 {
     max-height: 25rem;
     overflow-y: scroll;
 }
-.debug-wrapper {
+.introspection-wrapper {
     margin: 1rem;
 }
-.debug-output {
+.introspection-input {
+    resize: none;
+    overflow: hidden;
+    width: 100%;
+}
+.introspection-output {
     padding: 1rem;
     background-color: lightgrey;
     border: 1px solid black;

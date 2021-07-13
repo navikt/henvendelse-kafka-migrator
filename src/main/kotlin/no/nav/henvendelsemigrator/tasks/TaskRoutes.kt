@@ -4,13 +4,35 @@ import io.ktor.application.*
 import io.ktor.http.*
 import io.ktor.response.*
 import io.ktor.routing.*
+import no.nav.henvendelsemigrator.infrastructure.health.Healthcheck
+import java.time.LocalDateTime
 
-fun Route.taskRoutes(taskManager: TaskManager) {
+interface Task {
+    val name: String
+    val description: String
+    suspend fun start()
+    suspend fun stop()
+    fun isRunning(): Boolean
+    fun status(): TaskStatus
+    fun toHealtchCheck(): Healthcheck
+}
+data class TaskStatus(
+    val name: String,
+    val description: String,
+    val startingTime: LocalDateTime?,
+    val endTime: LocalDateTime?,
+    val isRunning: Boolean,
+    val isDone: Boolean,
+    val processed: Int
+)
+
+fun Route.taskRoutes(vararg tasks: Task) {
+    val taskmap: Map<String, Task> = tasks.associateBy { it.name }
     route("task") {
         route("{taskid}") {
             post("start") {
                 val taskId = requireNotNull(call.parameters["taskid"])
-                val task = taskManager.taskmap[taskId]
+                val task = taskmap[taskId]
                 when {
                     task == null -> call.respond(HttpStatusCode.NotFound, "Task not found '$taskId'")
                     task.isRunning() -> call.respond(HttpStatusCode.NotAcceptable, "Task already running '$taskId'")
@@ -22,7 +44,7 @@ fun Route.taskRoutes(taskManager: TaskManager) {
             }
             post("stop") {
                 val taskId = requireNotNull(call.parameters["taskid"])
-                val task = taskManager.taskmap[taskId]
+                val task = taskmap[taskId]
                 when {
                     task == null -> call.respond(HttpStatusCode.NotFound, "Task not found '$taskId'")
                     !task.isRunning() -> call.respond(HttpStatusCode.NotAcceptable, "Task not running '$taskId'")
@@ -34,7 +56,7 @@ fun Route.taskRoutes(taskManager: TaskManager) {
             }
             get("status") {
                 val taskId = requireNotNull(call.parameters["taskid"])
-                when (val task = taskManager.taskmap[taskId]) {
+                when (val task = taskmap[taskId]) {
                     null -> call.respond(HttpStatusCode.NotFound, "Task not found '$taskId'")
                     else -> call.respond(task.status())
                 }
@@ -42,7 +64,7 @@ fun Route.taskRoutes(taskManager: TaskManager) {
         }
 
         get {
-            call.respond(taskManager.taskmap.mapValues { it.value.status() })
+            call.respond(taskmap.mapValues { it.value.status() })
         }
     }
 }

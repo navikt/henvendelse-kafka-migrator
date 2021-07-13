@@ -32,7 +32,6 @@ async function createHealthchecksView() {
             check.append(el('pre', { className: 'stacktrace' }, throwable));
         }
         if (description) {
-            console.log('description', description);
             check.append(el('pre', { className: 'description' }, description));
         }
         container.append(check);
@@ -49,32 +48,52 @@ async function repeat(fn) {
         await delay(1000)
     } while (true)
 }
+function autogrow(element) {
+    element.style.height = 'auto';
+    element.style.height = `${element.scrollHeight}px`;
+}
 
-async function createDebugView() {
-    const container = document.querySelector('.debug-wrapper');
-    container.appendChild(el('section', {}, [
-        el('form', { className: 'processing' }, [
-            el('label', {}, [
-                'HenvendelseID',
-                el('input', { type: 'text' })
-            ]),
-            el('button', {}, 'Søk')
-        ])
-    ]));
-    container.appendChild(el('pre', { className: 'debug-output'}))
+async function createIntrospectionView() {
+    const response = await fetch('/henvendelse-kafka-migrator/introspect');
+    const tasks = await response.json();
+    Object.values(tasks).forEach(renderIntrospectionTask);
+
     document.addEventListener('submit', async (e) => {
         e.preventDefault();
-        if (e.target.className === 'processing') {
-            console.log('processing', e);
-            const henvendelseId = e.target.querySelector('input').value;
-            const response = await fetch('/henvendelse-kafka-migrator/internal/debug/processing', {
+        if (e.target.className === 'introspection-task') {
+            const taskname = e.target.dataset.name;
+            const input = e.target.querySelector('.introspection-input');
+            const output = e.target.querySelector('.introspection-output');
+            const response = await fetch( `/henvendelse-kafka-migrator/introspect/${taskname}/run`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ henvendelseId })
+                body: input.value
             });
-            document.querySelector('.debug-output').textContent = await response.text();
+            output.textContent = await response.text();
         }
     });
+}
+
+function renderIntrospectionTask(task) {
+    const { name, description, inputExample } = task;
+    console.log('task', task);
+    const container = document.querySelector('.introspection-wrapper');
+
+    const input = el('textarea', { className: 'introspection-input' });
+    input.value = JSON.stringify(inputExample, null, 2);
+    setTimeout(() => autogrow(input), 0);
+
+    const output = el('pre', { className: 'introspection-output'});
+
+    container.appendChild(el('section', {}, [
+        el('h2', {}, name),
+        el('p', {}, description),
+        el('form', { className: 'introspection-task', 'data-name': name }, [
+            input,
+            el('button', {}, 'Execute'),
+            output
+        ])
+    ]));
 }
 
 async function createTasksView() {
@@ -153,7 +172,7 @@ function addTaskActionListeners() {
 
 (function() {
     createHealthchecksView();
-    createDebugView();
+    createIntrospectionView();
     addTaskActionListeners();
     repeat(createTasksView);
 })();
