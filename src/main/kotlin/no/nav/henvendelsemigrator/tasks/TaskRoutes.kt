@@ -1,6 +1,7 @@
 package no.nav.henvendelsemigrator.tasks
 
 import io.ktor.application.*
+import io.ktor.auth.*
 import io.ktor.http.*
 import io.ktor.response.*
 import io.ktor.routing.*
@@ -30,27 +31,29 @@ fun Route.taskRoutes(vararg tasks: Task) {
     val taskmap: Map<String, Task> = tasks.associateBy { it.name }
     route("task") {
         route("{taskid}") {
-            post("start") {
-                val taskId = requireNotNull(call.parameters["taskid"])
-                val task = taskmap[taskId]
-                when {
-                    task == null -> call.respond(HttpStatusCode.NotFound, "Task not found '$taskId'")
-                    task.isRunning() -> call.respond(HttpStatusCode.NotAcceptable, "Task already running '$taskId'")
-                    else -> {
-                        task.start()
-                        call.respond(HttpStatusCode.OK, "Started task '$taskId'")
+            authenticate {
+                post("start") {
+                    val taskId = requireNotNull(call.parameters["taskid"])
+                    val task = taskmap[taskId]
+                    when {
+                        task == null -> call.respond(HttpStatusCode.NotFound, "Task not found '$taskId'")
+                        task.isRunning() -> call.respond(HttpStatusCode.NotAcceptable, "Task already running '$taskId'")
+                        else -> {
+                            task.start()
+                            call.respond(HttpStatusCode.OK, "Started task '$taskId'")
+                        }
                     }
                 }
-            }
-            post("stop") {
-                val taskId = requireNotNull(call.parameters["taskid"])
-                val task = taskmap[taskId]
-                when {
-                    task == null -> call.respond(HttpStatusCode.NotFound, "Task not found '$taskId'")
-                    !task.isRunning() -> call.respond(HttpStatusCode.NotAcceptable, "Task not running '$taskId'")
-                    else -> {
-                        task.stop()
-                        call.respond(HttpStatusCode.OK, "Stopped task '$taskId'")
+                post("stop") {
+                    val taskId = requireNotNull(call.parameters["taskid"])
+                    val task = taskmap[taskId]
+                    when {
+                        task == null -> call.respond(HttpStatusCode.NotFound, "Task not found '$taskId'")
+                        !task.isRunning() -> call.respond(HttpStatusCode.NotAcceptable, "Task not running '$taskId'")
+                        else -> {
+                            task.stop()
+                            call.respond(HttpStatusCode.OK, "Stopped task '$taskId'")
+                        }
                     }
                 }
             }

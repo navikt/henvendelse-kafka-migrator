@@ -1,6 +1,7 @@
 package no.nav.henvendelsemigrator.introspect
 
 import io.ktor.application.*
+import io.ktor.auth.*
 import io.ktor.http.*
 import io.ktor.request.*
 import io.ktor.response.*
@@ -35,15 +36,17 @@ fun Route.introspectRoutes(vararg tasks: IntrospectionTask<*, *>) {
 
     route("introspect") {
         route("{taskid}") {
-            post("run") {
-                val taskId = requireNotNull(call.parameters["taskid"])
-                val task: IntrospectionTask<Any, Any>? = taskmap[taskId]
-                when (task) {
-                    null -> call.respond(HttpStatusCode.NotFound, "Task not found '$taskId'")
-                    else -> {
-                        val taskInputType: KClass<*> = task.inputExample::class
-                        val body = call.receive(taskInputType)
-                        call.respond(HttpStatusCode.OK, task.action(body))
+            authenticate {
+                post("run") {
+                    val taskId = requireNotNull(call.parameters["taskid"])
+                    val task: IntrospectionTask<Any, Any>? = taskmap[taskId]
+                    when (task) {
+                        null -> call.respond(HttpStatusCode.NotFound, "Task not found '$taskId'")
+                        else -> {
+                            val taskInputType: KClass<*> = task.inputExample::class
+                            val body = call.receive(taskInputType)
+                            call.respond(HttpStatusCode.OK, task.action(body))
+                        }
                     }
                 }
             }
