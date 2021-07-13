@@ -8,7 +8,7 @@ metadata:
     team: personoversikt
 spec:
   image: "{{image}}"
-  port: 8080
+  port: 7075
   ingresses:
     - https://{{domene}}/henvendelse-kafka-migrator
   kafka:
