@@ -51,8 +51,9 @@ class Henvendelse(
     val henvendelseType: HenvendelseType?,
     val eksternAktor: String?,
     val tilknyttetEnhet: String?,
-    val opprettetDato: ZonedDateTime?,
+    val opprettetDato: ZonedDateTime,
     val avsluttetDato: ZonedDateTime?,
+    val utgaarDato: ZonedDateTime,
     val lestDato: ZonedDateTime?,
     val kontorsperreEnhet: String?,
     val brukersEnhet: String?,
@@ -75,7 +76,8 @@ class JournalfortInformasjon(
     val journalfortTema: String?,
     val journalfortDato: ZonedDateTime?,
     val journalfortSaksId: String?,
-    val journalforerNavIdent: String?
+    val journalforerNavIdent: String?,
+    val journalforendeEnhet: String?
 )
 
 class Markeringer(

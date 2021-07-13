@@ -19,9 +19,10 @@ import org.apache.kafka.clients.producer.ProducerRecord
 import java.time.Duration
 import java.time.LocalDateTime
 import java.time.ZoneId
+import java.time.ZonedDateTime
 
 class ProcessChangesTask(
-    private val autoStart: Boolean,
+    autoStart: Boolean,
     private val consumer: KafkaConsumer<String, String>,
     private val producer: KafkaProducer<String, String>,
     private val henvendelseDb: HealthcheckedDataSource,
@@ -106,14 +107,18 @@ class ProcessChangesTask(
                         val hendelser: Map<Long, List<OracleHendelse>> = hentHendelser(listOf(henvendelseId))
                         val sammenslatt = processHenvendelse(
                             henvendelse = henvendelser.first(),
-                            hendelser = hendelser[henvendelser.first().henvendelseId] ?: emptyList(),
-                            arkivpost = arkivpostIds.first()?.let { arkivposter[it] },
-                            vedlegg = arkivpostIds.first()?.let { vedlegg[it] }
+                            hendelser = hendelser[henvendelser.firstOrNull()?.henvendelseId] ?: emptyList(),
+                            arkivpost = arkivpostIds.firstOrNull()?.let { arkivposter[it] },
+                            vedlegg = arkivpostIds.firstOrNull()?.let { vedlegg[it] }
                         )
                         description = sammenslatt.toJson()
                     }
                     if (description == null) {
-                        HealthcheckResult.Error(name, System.currentTimeMillis() - start, IllegalStateException("No matching rows found"))
+                        HealthcheckResult.Error(
+                            name,
+                            System.currentTimeMillis() - start,
+                            IllegalStateException("No matching rows found")
+                        )
                     } else {
                         HealthcheckResult.Ok(name, System.currentTimeMillis() - start, description)
                     }
@@ -188,6 +193,13 @@ class ProcessChangesTask(
                     aktor = it.aktor
                 )
             }
+        val temagruppe: Temagruppe? = (
+            hendelsemap[HendelseKeys.endretTemagruppe]?.lastOrNull()?.verdi
+                ?: melding?.temagruppe?.name
+            )?.let { Temagruppe.valueOf(it) }
+
+        val utgaarDato: ZonedDateTime = (arkivpost?.utgaardato ?: finnUtgaarDatoGittTemagruppe(temagruppe))
+            .atZone(ZoneId.systemDefault())
 
         return Henvendelse(
             henvendelseId = henvendelse.henvendelseId,
@@ -204,6 +216,7 @@ class ProcessChangesTask(
             tilknyttetEnhet = henvendelse.tilknyttetEnhet,
             opprettetDato = henvendelse.opprettetdato.atZone(ZoneId.systemDefault()),
             avsluttetDato = henvendelse.innsendtdato?.atZone(ZoneId.systemDefault()),
+            utgaarDato = utgaarDato,
             lestDato = hendelsemap[HendelseKeys.lest]?.firstOrNull()?.dato?.atZone(ZoneId.systemDefault()),
             kontorsperreEnhet = henvendelse.kontorsperre,
             brukersEnhet = henvendelse.brukersEnhet,
@@ -211,14 +224,15 @@ class ProcessChangesTask(
             oppgaveIdGsak = henvendelse.oppgaveIdGsak,
             henvendelseIdGsak = henvendelse.henvendelseIdGsak,
             erTilknyttetAnsatt = henvendelse.erTilknyttetAnsatt,
-            gjeldendeTemagruppe = hendelsemap[HendelseKeys.endretTemagruppe]?.lastOrNull()?.verdi?.let { Temagruppe.valueOf(it) },
+            gjeldendeTemagruppe = temagruppe,
             journalfortInformasjon = henvendelse.journalpostId?.let {
                 JournalfortInformasjon(
                     journalpostId = henvendelse.journalpostId,
                     journalfortTema = henvendelse.journalfortTema,
                     journalfortDato = tilknyttning?.dato?.atZone(ZoneId.systemDefault()),
                     journalfortSaksId = henvendelse.journalfortSaksid,
-                    journalforerNavIdent = tilknyttning?.aktor
+                    journalforerNavIdent = tilknyttning?.aktor,
+                    journalforendeEnhet = tilknyttning?.enhet
                 )
             },
             markeringer = Markeringer(
@@ -227,7 +241,9 @@ class ProcessChangesTask(
                 ferdigstiltUtenSvar = ferdigstiltUtenSvar
             ),
             korrelasjonsId = henvendelse.korrelasjonsId,
-            metadataListe = if (melding == null) null else { MetadataListe(listOf(melding)) }
+            metadataListe = if (melding == null) null else {
+                MetadataListe(listOf(melding))
+            }
         )
     }
 
@@ -305,5 +321,12 @@ class ProcessChangesTask(
                 Row(rs).map { it.toVedlegg() }.toList()
             }
         ).associateBy { it.arkivpostid }
+    }
+
+    private fun finnUtgaarDatoGittTemagruppe(temagruppe: Temagruppe?): LocalDateTime {
+        return if (listOf(Temagruppe.ANSOS, Temagruppe.OKSOS).contains(temagruppe))
+            LocalDateTime.now().minusYears(2)
+        else
+            LocalDateTime.now().minusYears(25)
     }
 }
