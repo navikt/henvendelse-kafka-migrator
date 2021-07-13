@@ -129,7 +129,7 @@ fun Application.standardAppSetup(
         healthchecks = healthchecks
     )
     statusPages()
-    cors()
+//    cors()
     authentication(authConfig)
     jsonSupport(JacksonUtils.objectMapper)
     callLogging(applicationState.appname)
