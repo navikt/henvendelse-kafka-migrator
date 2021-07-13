@@ -23,7 +23,8 @@ data class Ingest(
         return this.copy(
             henvendelse = henvendelse.copy(
                 behandlingsresultat = null,
-                aktor = getAktorId()
+                aktor = getAktorId(),
+                arkivpostId = this.henvendelse.henvendelseId.toString()
             ),
             arkivpost = lagArkivpost(
                 henvendelseId = this.henvendelse.henvendelseId,
@@ -235,7 +236,7 @@ fun lagHenvendelse(henvendelseId: Long) = OracleHenvendelse(
     journalfortTema = "DAG",
     journalpostId = "123456789",
     batchStatus = "LEDIG",
-    arkivpostId = henvendelseId.toString(),
+    arkivpostId = null,
     kontorsperre = "1234",
     oppgaveIdGsak = "12345678",
     henvendelseIdGsak = "ABBA123456",
