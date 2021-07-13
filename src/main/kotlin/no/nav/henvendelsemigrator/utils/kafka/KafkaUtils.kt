@@ -14,8 +14,8 @@ import org.apache.kafka.common.serialization.StringSerializer
 import java.util.*
 
 object KafkaUtils {
-    const val henvendelseTopic = "henvendelse-henvendelse"
-    const val endringsloggTopic = "henvendelse-endringlogg"
+    const val henvendelseTopic = "personoversikt.henvendelse-henvendelse"
+    const val endringsloggTopic = "personoversikt.henvendelse-endringlogg"
 
     fun producerConfig(clientId: String, config: Config): Properties {
         val properties = Properties()
