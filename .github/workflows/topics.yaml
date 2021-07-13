@@ -4,14 +4,14 @@ on:
   push:
     paths:
       - '.github/workflows/topics.yaml'
-      - '.nais/**/*-topic.yaml'
+      - '.nais/topics.yaml'
 
 env:
   CI: true
   TZ: Europe/Oslo
 
 jobs:
-  henvendelse-topic:
+  setup-topics:
     name: Setup henvendelse topic
     runs-on: ubuntu-latest
     steps:
@@ -22,42 +22,16 @@ jobs:
         env:
           APIKEY: ${{ secrets.NAIS_DEPLOY_APIKEY }}
           PRINT_PAYLOAD: true
-          CLUSTER: dev-fss
-          RESOURCE: .nais/henvendelse-topic.yaml
+          CLUSTER: dev-gcp
+          RESOURCE: .nais/topics.yaml
           VARS: .nais/vars/preprod.yaml
-          DRY_RUN: true
       - name: Setup prod
         if: github.ref == 'refs/heads/master'
         uses: nais/deploy/actions/deploy@v1
         env:
           APIKEY: ${{ secrets.NAIS_DEPLOY_APIKEY }}
           PRINT_PAYLOAD: true
-          CLUSTER: dev-fss
-          RESOURCE: .nais/henvendelse-topic.yaml
-          VARS: .nais/vars/prod.yaml
-          DRY_RUN: true
-  hendelse-topic:
-    name: Setup henvendelse topic
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v1
-      - name: Setup preprod
-        if: github.ref == 'refs/heads/dev'
-        uses: nais/deploy/actions/deploy@v1
-        env:
-          APIKEY: ${{ secrets.NAIS_DEPLOY_APIKEY }}
-          PRINT_PAYLOAD: true
-          CLUSTER: dev-fss
-          RESOURCE: .nais/endringlogg-topic.yaml
-          VARS: .nais/vars/preprod.yaml
-          DRY_RUN: true
-      - name: Setup prod
-        if: github.ref == 'refs/heads/master'
-        uses: nais/deploy/actions/deploy@v1
-        env:
-          APIKEY: ${{ secrets.NAIS_DEPLOY_APIKEY }}
-          PRINT_PAYLOAD: true
-          CLUSTER: dev-fss
-          RESOURCE: .nais/endringlogg-topic.yaml
+          CLUSTER: prod-gcp
+          RESOURCE: .nais/topics.yaml
           VARS: .nais/vars/prod.yaml
           DRY_RUN: true

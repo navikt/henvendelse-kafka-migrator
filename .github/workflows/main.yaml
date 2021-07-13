@@ -3,7 +3,7 @@ name: Build, push, and deploy
 on:
   push:
     paths-ignore:
-      - '.nais/**/*-topic.yaml'
+      - '.nais/topics.yaml'
       - 'README.md'
       - 'Docker-compose.yaml'
 
