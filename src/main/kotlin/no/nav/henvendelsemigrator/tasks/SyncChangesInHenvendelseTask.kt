@@ -13,7 +13,9 @@ import org.apache.kafka.clients.producer.KafkaProducer
 import org.apache.kafka.clients.producer.ProducerRecord
 
 data class Hendelse(val id: Long, val henvendelseId: String)
+
 private const val SIST_PROSESSERT_HENDELSE = "SIST_PROSESSERT_HENDELSE"
+
 class SyncChangesInHenvendelseTask(
     val henvendelseDb: HealthcheckedDataSource,
     val producer: KafkaProducer<String, String>
@@ -45,9 +47,11 @@ class SyncChangesInHenvendelseTask(
             dataSource = henvendelseDb,
             query = "SELECT * FROM migreringmetadata",
             process = { rs ->
-                Row(rs).map { it.stringOrNull("key") to it.stringOrNull("value") }
+                Row(rs)
+                    .map { it.stringOrNull("key") to it.stringOrNull("value") }
+                    .toMap()
             }
-        ).toMap()
+        )
         val sistProsesserteHendelse: Long = migreringData[SIST_PROSESSERT_HENDELSE]?.toLong() ?: return emptyList()
 
         return executeQuery(
@@ -55,19 +59,22 @@ class SyncChangesInHenvendelseTask(
             query = "SELECT * FROM hendelse WHERE id > ?",
             setVars = { stmt -> stmt.setLong(1, sistProsesserteHendelse) },
             process = { rs ->
-                Row(rs).map { row ->
-                    Hendelse(
-                        row.long("id"),
-                        row.string("henvendelse_id")
-                    )
-                }
+                Row(rs)
+                    .map { row ->
+                        Hendelse(
+                            row.long("id"),
+                            row.string("henvendelse_id")
+                        )
+                    }
+                    .toList()
             }
-        ).toList()
+        )
     }
 
     private fun lagreSistLesteHendelse(hendelse: Hendelse) {
         using(henvendelseDb.getOrThrow().connection) { connection ->
-            val stmt = connection.prepareStatement("UPDATE migreringmetadata SET value = ? WHERE key = '$SIST_PROSESSERT_HENDELSE'")
+            val stmt = connection
+                .prepareStatement("UPDATE migreringmetadata SET value = ? WHERE key = '$SIST_PROSESSERT_HENDELSE'")
             stmt.setString(1, hendelse.id.toString())
             stmt.execute()
             connection.commit()
@@ -98,9 +105,11 @@ class SyncChangesInHenvendelseTask(
             dataSource = henvendelseDb,
             query = "SELECT * FROM migreringmetadata",
             process = { rs ->
-                Row(rs).map { it.stringOrNull("key") to it.stringOrNull("value") }
+                Row(rs).map {
+                    it.stringOrNull("key") to it.stringOrNull("value")
+                }.toMap()
             }
-        ).toMap()
+        )
         requireNotNull(migreringData[SIST_PROSESSERT_HENDELSE]) {
             "Tabell må innehold nøkkel for '$SIST_PROSESSERT_HENDELSE'"
         }
