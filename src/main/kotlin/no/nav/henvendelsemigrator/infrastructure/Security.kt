@@ -34,7 +34,7 @@ fun Authentication.Configuration.setupJWT(jwksUrl: String) {
 
 object Security {
     private const val invalidJWT = "Invalid JWT"
-    private const val cookieName = "ID_token"
+    private const val cookieName = "modia_ID_token"
 
     fun getSubject(call: ApplicationCall): String {
         return try {
