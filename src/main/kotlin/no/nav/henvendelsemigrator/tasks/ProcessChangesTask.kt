@@ -28,7 +28,7 @@ class ProcessChangesTask(
     private val henvendelseDb: HealthcheckedDataSource,
     private val henvendelseArkivDb: HealthcheckedDataSource,
 ) : Task {
-    override val name = requireNotNull(ProcessChangesTask::class.simpleName)
+    override val name = "Fase 3 - Prosesser endringer"
     override val description = """
         Leser kafka-meldinger fra endringslogg, henter relevant informasjon og dytter det til ny kafka topic
     """.trimIndent()

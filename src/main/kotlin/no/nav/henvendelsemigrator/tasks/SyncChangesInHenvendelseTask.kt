@@ -2,7 +2,6 @@ package no.nav.henvendelsemigrator.tasks
 
 import kotlinx.coroutines.delay
 import kotliquery.Row
-import kotliquery.using
 import no.nav.henvendelsemigrator.infrastructure.HealthcheckedDataSource
 import no.nav.henvendelsemigrator.infrastructure.health.Healthcheck
 import no.nav.henvendelsemigrator.introspect.SetLastProcessedHendelse
@@ -21,7 +20,7 @@ class SyncChangesInHenvendelseTask(
     val henvendelseDb: HealthcheckedDataSource,
     val producer: KafkaProducer<String, String>
 ) : SimpleTask() {
-    override val name: String = requireNotNull(SyncChangesInHenvendelseTask::class.simpleName)
+    override val name: String = "Fase 2 - Lytt til endringer"
     override val description: String = """
         Holder styr på siste synkroniserte henvendelse vha endringer i hendelse-tabellen.
         Siste prosesserte hendelse er lagret i migreringmetadata-tabellen.
@@ -108,7 +107,7 @@ class SyncChangesInHenvendelseTask(
             }
         )
         requireNotNull(migreringData[SIST_PROSESSERT_HENDELSE]) {
-            "Tabell må innehold nøkkel for '$SIST_PROSESSERT_HENDELSE'"
+            "Table must contain key '$SIST_PROSESSERT_HENDELSE'"
         }
     }
 }

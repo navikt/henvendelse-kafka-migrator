@@ -28,7 +28,7 @@ data class TaskStatus(
 )
 
 fun Route.taskRoutes(vararg tasks: Task) {
-    val taskmap: Map<String, Task> = tasks.associateBy { it.name }
+    val taskmap: Map<String, Task> = tasks.associateBy { it.name.replace(" ", "") }
     route("task") {
         route("{taskid}") {
             authenticate {

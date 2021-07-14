@@ -70,13 +70,13 @@ fun runApplication(config: Config) {
                 }
                 taskRoutes(
                     readExistingHenvendelseIdsTask,
-                    processChangesTask,
-                    syncChangesInHenvendelseTask
+                    syncChangesInHenvendelseTask,
+                    processChangesTask
                 )
                 introspectRoutes(
-                    ProcessHenvendelseId(processChangesTask),
-                    GetKafkaOffset(config),
-                    ReadKafkaTopic(config),
+                    ProcessHenvendelseId.Task(processChangesTask),
+                    GetKafkaOffset.Task(config),
+                    ReadKafkaTopic.Task(config),
                     SetLastProcessedHendelse.Task(henvendelseDb)
                 )
             }
