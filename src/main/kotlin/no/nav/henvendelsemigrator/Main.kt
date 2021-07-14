@@ -6,10 +6,7 @@ import io.ktor.routing.*
 import no.nav.henvendelsemigrator.infrastructure.*
 import no.nav.henvendelsemigrator.infrastructure.health.Healthcheck
 import no.nav.henvendelsemigrator.infrastructure.health.toHealthcheck
-import no.nav.henvendelsemigrator.introspect.GetKafkaOffset
-import no.nav.henvendelsemigrator.introspect.ProcessHenvendelseId
-import no.nav.henvendelsemigrator.introspect.ReadKafkaTopic
-import no.nav.henvendelsemigrator.introspect.introspectRoutes
+import no.nav.henvendelsemigrator.introspect.*
 import no.nav.henvendelsemigrator.tasks.*
 import no.nav.henvendelsemigrator.utils.EnvUtils.getRequiredProperty
 import no.nav.henvendelsemigrator.utils.kafka.HealthcheckableKafkaConsumer
@@ -79,7 +76,8 @@ fun runApplication(config: Config) {
                 introspectRoutes(
                     ProcessHenvendelseId(processChangesTask),
                     GetKafkaOffset(config),
-                    ReadKafkaTopic(config)
+                    ReadKafkaTopic(config),
+                    SetLastProcessedHendelse.Task(henvendelseDb)
                 )
             }
         }
