@@ -61,6 +61,7 @@ class ProcessChangesTask(
                     process(records)
                     consumer.commitSync()
                     log.info("Processed ${records.count()} records in ${System.currentTimeMillis() - start}ms")
+                    processed += records.count()
                 }
                 consumer.unsubscribe()
                 log.info("Stopped task $name")
