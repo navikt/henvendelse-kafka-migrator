@@ -38,16 +38,6 @@ async function createHealthchecksView() {
     })
 }
 
-async function delay(ms) {
-    return new Promise((resolve) => setTimeout(resolve, ms))
-}
-
-async function repeat(fn) {
-    do {
-        await fn();
-        await delay(1000)
-    } while (true)
-}
 function autogrow(element) {
     element.style.height = 'auto';
     element.style.height = `${element.scrollHeight}px`;
@@ -67,7 +57,8 @@ async function createIntrospectionView() {
             const response = await fetch( `/henvendelse-kafka-migrator/introspect/${taskname}/run`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: input.value
+                body: input.value,
+                credentials: 'include'
             });
             output.textContent = await response.text();
         }
@@ -134,7 +125,8 @@ function renderTask(taskstatus) {
     ]);
     const buttons = el('div', {}, [
         el('button', { className: 'task-action', 'data-taskname': taskstatus.name, 'data-action': 'start', [taskstatus.isRunning ? 'disabled' : 'na']: true }, 'Start'),
-        el('button', { className: 'task-action', 'data-taskname': taskstatus.name, 'data-action': 'stop', [!taskstatus.isRunning ? 'disabled' : 'na']: true }, 'Stop')
+        el('button', { className: 'task-action', 'data-taskname': taskstatus.name, 'data-action': 'stop', [!taskstatus.isRunning ? 'disabled' : 'na']: true }, 'Stop'),
+        el('button', { className: 'task-action', 'data-taskname': taskstatus.name, 'data-action': 'refresh' }, 'Refresh status')
     ]);
     task.appendChild(status);
     task.appendChild(time);
@@ -151,12 +143,16 @@ function renderTask(taskstatus) {
 function addTaskActionListeners() {
     const taskmap = {
         start: async (task) => {
-            await fetch(`/henvendelse-kafka-migrator/task/${task}/start`, { method: 'POST' });
+            await fetch(`/henvendelse-kafka-migrator/task/${task}/start`, { method: 'POST', credentials: 'include' });
             const taskstatus = await fetch(`/henvendelse-kafka-migrator/task/${task}/status`).then(resp => resp.json());
             renderTask(taskstatus);
         },
         stop: async (task) => {
-            await fetch(`/henvendelse-kafka-migrator/task/${task}/stop`, { method: 'POST' });
+            await fetch(`/henvendelse-kafka-migrator/task/${task}/stop`, { method: 'POST', credentials: 'include' });
+            const taskstatus = await fetch(`/henvendelse-kafka-migrator/task/${task}/status`).then(resp => resp.json());
+            renderTask(taskstatus);
+        },
+        refresh: async (task) => {
             const taskstatus = await fetch(`/henvendelse-kafka-migrator/task/${task}/status`).then(resp => resp.json());
             renderTask(taskstatus);
         }
@@ -174,5 +170,5 @@ function addTaskActionListeners() {
     createHealthchecksView();
     createIntrospectionView();
     addTaskActionListeners();
-    repeat(createTasksView);
+    createTasksView();
 })();
