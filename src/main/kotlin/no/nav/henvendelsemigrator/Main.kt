@@ -46,6 +46,7 @@ fun runApplication(config: Config) {
         henvendelseDb = henvendelseDb,
         henvendelseArkivDb = henvendelseArkivDb
     )
+    val syncChangesInHenvendelseTask = SyncChangesInHenvendelseTask(henvendelseDb, kafkaProducer)
 
     val healthchecks: List<Healthcheck> = listOf(
         henvendelseDb.toHealthcheck("henvendelse"),
@@ -54,7 +55,8 @@ fun runApplication(config: Config) {
         kafkaProducer.toHealthcheck(KafkaUtils.endringsloggTopic),
         kafkaProducer.toHealthcheck(KafkaUtils.henvendelseTopic),
         readExistingHenvendelseIdsTask.toHealtchCheck(),
-        processChangesTask.toHealtchCheck()
+        processChangesTask.toHealtchCheck(),
+        syncChangesInHenvendelseTask.toHealtchCheck()
     )
 
     HttpServer.create(appname, 7075) { state ->
@@ -69,7 +71,11 @@ fun runApplication(config: Config) {
                     resources("webapp")
                     defaultResource("index.html", "webapp")
                 }
-                taskRoutes(readExistingHenvendelseIdsTask, processChangesTask)
+                taskRoutes(
+                    readExistingHenvendelseIdsTask,
+                    processChangesTask,
+                    syncChangesInHenvendelseTask
+                )
                 introspectRoutes(
                     ProcessHenvendelseId(processChangesTask),
                     GetKafkaOffset(config),

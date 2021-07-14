@@ -14,7 +14,7 @@ import org.apache.kafka.clients.producer.KafkaProducer
 fun interface Healthcheck {
     suspend fun check(): HealthcheckResult
     companion object {
-        fun byRunning(name: String, description: String? = null, block: suspend () -> Any) = Healthcheck {
+        fun byRunning(name: String, description: String? = null, block: suspend () -> Unit) = Healthcheck {
             val start = System.currentTimeMillis()
             try {
                 block()

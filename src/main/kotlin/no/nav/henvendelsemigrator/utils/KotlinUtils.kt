@@ -12,6 +12,7 @@ inline fun Timer.schedule(delay: Duration, period: Duration, crossinline action:
 }
 
 val Int.minutes get() = Duration.of(this.toLong(), ChronoUnit.MINUTES)
+val Int.minutesInMillies get() = this.toLong() * 60 * 1000
 
 fun String.toUUID(): UUID {
     return try {
