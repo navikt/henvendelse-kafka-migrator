@@ -6,10 +6,7 @@ import io.ktor.routing.*
 import no.nav.henvendelsemigrator.infrastructure.*
 import no.nav.henvendelsemigrator.infrastructure.health.Healthcheck
 import no.nav.henvendelsemigrator.infrastructure.health.toHealthcheck
-import no.nav.henvendelsemigrator.introspect.GetKafkaOffset
-import no.nav.henvendelsemigrator.introspect.ProcessHenvendelseId
-import no.nav.henvendelsemigrator.introspect.ReadKafkaTopic
-import no.nav.henvendelsemigrator.introspect.introspectRoutes
+import no.nav.henvendelsemigrator.introspect.*
 import no.nav.henvendelsemigrator.tasks.*
 import no.nav.henvendelsemigrator.utils.EnvUtils.getRequiredProperty
 import no.nav.henvendelsemigrator.utils.kafka.HealthcheckableKafkaConsumer
@@ -46,6 +43,7 @@ fun runApplication(config: Config) {
         henvendelseDb = henvendelseDb,
         henvendelseArkivDb = henvendelseArkivDb
     )
+    val syncChangesInHenvendelseTask = SyncChangesInHenvendelseTask(henvendelseDb, kafkaProducer)
 
     val healthchecks: List<Healthcheck> = listOf(
         henvendelseDb.toHealthcheck("henvendelse"),
@@ -54,7 +52,8 @@ fun runApplication(config: Config) {
         kafkaProducer.toHealthcheck(KafkaUtils.endringsloggTopic),
         kafkaProducer.toHealthcheck(KafkaUtils.henvendelseTopic),
         readExistingHenvendelseIdsTask.toHealtchCheck(),
-        processChangesTask.toHealtchCheck()
+        processChangesTask.toHealtchCheck(),
+        syncChangesInHenvendelseTask.toHealtchCheck()
     )
 
     HttpServer.create(appname, 7075) { state ->
@@ -69,11 +68,16 @@ fun runApplication(config: Config) {
                     resources("webapp")
                     defaultResource("index.html", "webapp")
                 }
-                taskRoutes(readExistingHenvendelseIdsTask, processChangesTask)
+                taskRoutes(
+                    readExistingHenvendelseIdsTask,
+                    syncChangesInHenvendelseTask,
+                    processChangesTask
+                )
                 introspectRoutes(
-                    ProcessHenvendelseId(processChangesTask),
-                    GetKafkaOffset(config),
-                    ReadKafkaTopic(config)
+                    ProcessHenvendelseId.Task(processChangesTask),
+                    GetKafkaOffset.Task(config),
+                    ReadKafkaTopic.Task(config),
+                    SetLastProcessedHendelse.Task(henvendelseDb)
                 )
             }
         }

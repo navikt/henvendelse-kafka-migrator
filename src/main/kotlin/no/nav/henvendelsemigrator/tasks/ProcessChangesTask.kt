@@ -28,7 +28,7 @@ class ProcessChangesTask(
     private val henvendelseDb: HealthcheckedDataSource,
     private val henvendelseArkivDb: HealthcheckedDataSource,
 ) : Task {
-    override val name = requireNotNull(ProcessChangesTask::class.simpleName)
+    override val name = "Fase 3 - Prosesser endringer"
     override val description = """
         Leser kafka-meldinger fra endringslogg, henter relevant informasjon og dytter det til ny kafka topic
     """.trimIndent()
@@ -61,6 +61,7 @@ class ProcessChangesTask(
                     process(records)
                     consumer.commitSync()
                     log.info("Processed ${records.count()} records in ${System.currentTimeMillis() - start}ms")
+                    processed += records.count()
                 }
                 consumer.unsubscribe()
                 log.info("Stopped task $name")
@@ -293,11 +294,11 @@ class ProcessChangesTask(
                 aktorIds.forEachIndexed { index, aktorId -> stmt.setString(index + 1, aktorId) }
             },
             process = { rs ->
-                Row(rs).map {
-                    it.string("aktorid") to it.string("fnr")
-                }
+                Row(rs)
+                    .map { it.string("aktorid") to it.string("fnr") }
+                    .toMap()
             }
-        ).toMap()
+        )
     }
 
     fun hentHendelser(henvendelseIds: List<Long>): Map<Long, List<OracleHendelse>> {

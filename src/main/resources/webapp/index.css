@@ -23,7 +23,7 @@ body > h1 {
 .healthchecks .healthcheck {
     padding: 0.25rem 1.25rem;
 }
-.healthchecks .healthcheck h1 {
+.healthchecks .healthcheck h3 {
     font-size: 1rem;
     font-weight: bold;
 }
@@ -41,6 +41,9 @@ body > h1 {
 .introspection-wrapper {
     margin: 1rem;
 }
+.introspection-wrapper section {
+    margin-bottom: 1rem;
+}
 .introspection-input {
     resize: none;
     overflow: hidden;
@@ -57,7 +60,4 @@ body > h1 {
 }
 .tasks-wrapper .task {
     margin-bottom: 1rem;
-}
-.tasks-wrapper .task h1 {
-    font-size: 1.125rem;
 }

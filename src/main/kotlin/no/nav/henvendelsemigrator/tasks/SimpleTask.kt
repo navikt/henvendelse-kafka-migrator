@@ -1,6 +1,7 @@
 package no.nav.henvendelsemigrator.tasks
 
 import kotlinx.coroutines.*
+import no.nav.henvendelsemigrator.infrastructure.health.HealthcheckResult
 import java.time.LocalDateTime
 
 abstract class SimpleTask : Task {
@@ -12,6 +13,11 @@ abstract class SimpleTask : Task {
     abstract suspend fun reset()
     override suspend fun start() {
         if (process != null) throw IllegalStateException("Task $name is already running")
+        val healthcheck = this.toHealtchCheck().check()
+        if (healthcheck is HealthcheckResult.Error) {
+            throw healthcheck.throwable
+        }
+
         withContext(Dispatchers.IO) {
             startingTime = LocalDateTime.now()
             endTime = null

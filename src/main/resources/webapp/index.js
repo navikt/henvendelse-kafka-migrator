@@ -27,7 +27,7 @@ async function createHealthchecksView() {
     json.forEach(({ name, time, description, throwable }) => {
         const className = `healthcheck healthcheck--${throwable ? 'KO' : 'OK' }`;
         const check = el('section', { className });
-        check.append(el('h1', {}, `${name} (${time}ms)`));
+        check.append(el('h3', {}, `${name} (${time}ms)`));
         if (throwable) {
             check.append(el('pre', { className: 'stacktrace' }, throwable));
         }
@@ -77,11 +77,11 @@ function renderIntrospectionTask(task) {
     const output = el('pre', { className: 'introspection-output'});
 
     container.appendChild(el('section', {}, [
-        el('h2', {}, name),
+        el('h3', {}, name),
         el('p', {}, description),
         el('form', { className: 'introspection-task', 'data-name': name }, [
             input,
-            el('button', {}, 'Execute'),
+            el('button', {}, 'Kjør'),
             output
         ])
     ]));
@@ -95,21 +95,21 @@ async function createTasksView() {
 
 function renderTask(taskstatus) {
     const container = document.querySelector('.tasks');
-    const task = el('section', { className: 'task', 'data-taskname': taskstatus.name });
-    task.appendChild(el('h1', {}, taskstatus.name));
+    const task = el('section', { className: 'task', 'data-taskname': taskstatus.name.replaceAll(' ','') });
+    task.appendChild(el('h3', {}, taskstatus.name));
     task.appendChild(el('p', {}, taskstatus.description));
 
     const status = el('div', {}, [
         el('span', {}, [
-            el('b', {}, 'Running: '),
+            el('b', {}, 'Kjører: '),
             taskstatus.isRunning.toString()
         ]),
         el('span', {}, [
-            el('b', {}, 'Done: '),
+            el('b', {}, 'Ferdig: '),
             taskstatus.isDone.toString()
         ]),
         el('span', {}, [
-            el('b', {}, 'Processed: '),
+            el('b', {}, 'Prosessert: '),
             taskstatus.processed.toString()
         ])
     ]);
@@ -119,20 +119,20 @@ function renderTask(taskstatus) {
             taskstatus.startingTime ?? 'N/A'
         ]),
         el('span', {}, [
-            el('b', {}, 'End: '),
+            el('b', {}, 'Stopp: '),
             taskstatus.endTime ?? 'N/A'
         ])
     ]);
     const buttons = el('div', {}, [
-        el('button', { className: 'task-action', 'data-taskname': taskstatus.name, 'data-action': 'start', [taskstatus.isRunning ? 'disabled' : 'na']: true }, 'Start'),
-        el('button', { className: 'task-action', 'data-taskname': taskstatus.name, 'data-action': 'stop', [!taskstatus.isRunning ? 'disabled' : 'na']: true }, 'Stop'),
-        el('button', { className: 'task-action', 'data-taskname': taskstatus.name, 'data-action': 'refresh' }, 'Refresh status')
+        el('button', { className: 'task-action', 'data-taskname': taskstatus.name.replaceAll(' ',''), 'data-action': 'start', [taskstatus.isRunning ? 'disabled' : 'na']: true }, 'Start'),
+        el('button', { className: 'task-action', 'data-taskname': taskstatus.name.replaceAll(' ',''), 'data-action': 'stop', [!taskstatus.isRunning ? 'disabled' : 'na']: true }, 'Stopp'),
+        el('button', { className: 'task-action', 'data-taskname': taskstatus.name.replaceAll(' ',''), 'data-action': 'refresh' }, 'Oppdater status')
     ]);
     task.appendChild(status);
     task.appendChild(time);
     task.appendChild(buttons);
 
-    const existing = container.querySelector(`.task[data-taskname=${taskstatus.name}]`)
+    const existing = container.querySelector(`.task[data-taskname=${taskstatus.name.replaceAll(' ','')}]`)
     if (existing) {
         existing.replaceWith(task);
     } else {
