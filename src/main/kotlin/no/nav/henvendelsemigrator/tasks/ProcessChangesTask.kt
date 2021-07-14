@@ -109,7 +109,8 @@ class ProcessChangesTask(
                             henvendelse = henvendelser.first(),
                             hendelser = hendelser[henvendelser.firstOrNull()?.henvendelseId] ?: emptyList(),
                             arkivpost = arkivpostIds.firstOrNull()?.let { arkivposter[it] },
-                            vedlegg = arkivpostIds.firstOrNull()?.let { vedlegg[it] }
+                            vedlegg = arkivpostIds.firstOrNull()?.let { vedlegg[it] },
+                            fallbackFnrFraHenvendelseMapping = null
                         )
                         description = sammenslatt.toJson()
                     }
@@ -141,6 +142,10 @@ class ProcessChangesTask(
 
     fun processChunk(henvendelseIds: List<Long>): List<Henvendelse> {
         val henvendelser: List<OracleHenvendelse> = hentHenvendelser(henvendelseIds)
+        val aktorIdHvorFnrMappingIkkeKanHentesFraArkivpost = henvendelser
+            .filter { it.arkivpostId == null }
+            .mapNotNull { it.aktor }
+        val aktorFnrMapping: Map<String, String> = hentAktorFnrMapping(aktorIdHvorFnrMappingIkkeKanHentesFraArkivpost)
         val arkivpostIds: List<Long> = henvendelser.mapNotNull { it.arkivpostId?.toLong() }
         val hendelser: Map<Long, List<OracleHendelse>> = hentHendelser(henvendelseIds)
         val arkivposter: Map<Long, OracleArkivpost> = hentArkivposter(arkivpostIds)
@@ -153,7 +158,8 @@ class ProcessChangesTask(
                     henvendelse = henvendelse,
                     hendelser = hendelser[henvendelse.henvendelseId] ?: emptyList(),
                     arkivpost = arkivpostId?.let { arkivposter[it] },
-                    vedlegg = arkivpostId?.let { vedlegg[it] }
+                    vedlegg = arkivpostId?.let { vedlegg[it] },
+                    fallbackFnrFraHenvendelseMapping = aktorFnrMapping[henvendelse.aktor]
                 )
             }
     }
@@ -162,7 +168,8 @@ class ProcessChangesTask(
         henvendelse: OracleHenvendelse,
         hendelser: List<OracleHendelse>,
         arkivpost: OracleArkivpost?,
-        vedlegg: OracleVedlegg?
+        vedlegg: OracleVedlegg?,
+        fallbackFnrFraHenvendelseMapping: String?
     ): Henvendelse {
         val hendelsemap = hendelser.groupBy { it.type }
         val melding = lagMelding(henvendelse, arkivpost, vedlegg)
@@ -206,7 +213,7 @@ class ProcessChangesTask(
             behandlingsId = henvendelse.behandlingsId,
             behandlingskjedeId = henvendelse.behandlingsKjedeId,
             applikasjonsId = null, // Settes aldri av henvendelse
-            fnr = arkivpost?.fodselsnummer, // TODO() Hva om arkivpost er null, hente fra aktor_fnr_mapping...
+            fnr = arkivpost?.fodselsnummer ?: fallbackFnrFraHenvendelseMapping,
             aktorId = henvendelse.aktor,
             tema = henvendelse.tema,
             behandlingstema = henvendelse.behandlingstema,
@@ -275,6 +282,22 @@ class ProcessChangesTask(
                 Row(rs).map { it.toHenvendelse() }.toList()
             }
         )
+    }
+
+    private fun hentAktorFnrMapping(aktorIds: List<String>): Map<String, String> {
+        if (aktorIds.isEmpty())return emptyMap()
+        return executeQuery(
+            dataSource = henvendelseArkivDb,
+            query = "SELECT aktorid, fnr FROM aktor_fnr_mapping where aktorid in (${paramlist(aktorIds.size)})",
+            setVars = { stmt ->
+                aktorIds.forEachIndexed { index, aktorId -> stmt.setString(index + 1, aktorId) }
+            },
+            process = { rs ->
+                Row(rs).map {
+                    it.string("aktorid") to it.string("fnr")
+                }
+            }
+        ).toMap()
     }
 
     fun hentHendelser(henvendelseIds: List<Long>): Map<Long, List<OracleHendelse>> {
