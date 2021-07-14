@@ -294,11 +294,11 @@ class ProcessChangesTask(
                 aktorIds.forEachIndexed { index, aktorId -> stmt.setString(index + 1, aktorId) }
             },
             process = { rs ->
-                Row(rs).map {
-                    it.string("aktorid") to it.string("fnr")
-                }
+                Row(rs)
+                    .map { it.string("aktorid") to it.string("fnr") }
+                    .toMap()
             }
-        ).toMap()
+        )
     }
 
     fun hentHendelser(henvendelseIds: List<Long>): Map<Long, List<OracleHendelse>> {
