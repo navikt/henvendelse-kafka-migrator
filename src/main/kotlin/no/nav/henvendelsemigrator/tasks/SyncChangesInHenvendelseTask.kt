@@ -5,6 +5,7 @@ import kotliquery.Row
 import kotliquery.using
 import no.nav.henvendelsemigrator.infrastructure.HealthcheckedDataSource
 import no.nav.henvendelsemigrator.infrastructure.health.Healthcheck
+import no.nav.henvendelsemigrator.introspect.SetLastProcessedHendelse
 import no.nav.henvendelsemigrator.log
 import no.nav.henvendelsemigrator.utils.executeQuery
 import no.nav.henvendelsemigrator.utils.kafka.KafkaUtils
@@ -14,7 +15,7 @@ import org.apache.kafka.clients.producer.ProducerRecord
 
 data class Hendelse(val id: Long, val henvendelseId: String)
 
-private const val SIST_PROSESSERT_HENDELSE = "SIST_PROSESSERT_HENDELSE"
+const val SIST_PROSESSERT_HENDELSE = "SIST_PROSESSERT_HENDELSE"
 
 class SyncChangesInHenvendelseTask(
     val henvendelseDb: HealthcheckedDataSource,
@@ -72,13 +73,9 @@ class SyncChangesInHenvendelseTask(
     }
 
     private fun lagreSistLesteHendelse(hendelse: Hendelse) {
-        using(henvendelseDb.getOrThrow().connection) { connection ->
-            val stmt = connection
-                .prepareStatement("UPDATE migreringmetadata SET value = ? WHERE key = '$SIST_PROSESSERT_HENDELSE'")
-            stmt.setString(1, hendelse.id.toString())
-            stmt.execute()
-            connection.commit()
-        }
+        SetLastProcessedHendelse.Task(henvendelseDb).action(
+            SetLastProcessedHendelse.Input(hendelse.id)
+        )
     }
 
     override suspend fun reset() {
