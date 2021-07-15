@@ -2,6 +2,8 @@ package no.nav.henvendelsemigrator.tasks
 
 import kotlinx.coroutines.delay
 import kotliquery.Row
+import no.nav.henvendelsemigrator.domain.HendelseType
+import no.nav.henvendelsemigrator.domain.HenvendelseType
 import no.nav.henvendelsemigrator.infrastructure.HealthcheckedDataSource
 import no.nav.henvendelsemigrator.infrastructure.health.Healthcheck
 import no.nav.henvendelsemigrator.introspect.SetLastProcessedHendelse
@@ -26,6 +28,14 @@ class SyncChangesInHenvendelseTask(
         Siste prosesserte hendelse er lagret i migreringmetadata-tabellen.
     """.trimIndent()
     private var processed: Int = 0
+
+    private val henvendelsetyper = HenvendelseType
+        .values()
+        .joinToString(", ") { "'$it'" }
+
+    private val hendelsetyper = HendelseType
+        .values()
+        .joinToString(", ") { "'$it'" }
 
     override suspend fun runTask() {
         while (isRunning()) {
@@ -56,7 +66,13 @@ class SyncChangesInHenvendelseTask(
 
         return executeQuery(
             dataSource = henvendelseDb,
-            query = "SELECT * FROM hendelse WHERE id > ?",
+            query = """
+                SELECT hendelse.id, hendelse.henvendelse_id FROM hendelse hendelse
+                JOIN henvendelse henvendelse ON (hendelse.henvendelse_id = henvendelse.henvendelse_id)
+                WHERE hendelse.id > ?
+                AND hendelse.type IN ($hendelsetyper)
+                AND henvendelse.type IN ($henvendelsetyper)
+            """.trimIndent(),
             setVars = { stmt -> stmt.setLong(1, sistProsesserteHendelse) },
             process = { rs ->
                 Row(rs)
@@ -94,7 +110,7 @@ class SyncChangesInHenvendelseTask(
     override fun toHealtchCheck() = Healthcheck.byRunning(
         name = name,
         description = """
-            Får hentet ut nødvendig data fra migreringsmetadata tabell
+            Får hentet ut nødvendig data fra migreringsmetadata og hendelse tabell
         """.trimIndent()
     ) {
         val migreringData = executeQuery(
@@ -107,7 +123,8 @@ class SyncChangesInHenvendelseTask(
             }
         )
         requireNotNull(migreringData[SIST_PROSESSERT_HENDELSE]) {
-            "Table must contain key '$SIST_PROSESSERT_HENDELSE'"
+            "Tabell må inneholde '$SIST_PROSESSERT_HENDELSE'"
         }
+        hentHenvendelseIderSomSkalSynkroniseres()
     }
 }

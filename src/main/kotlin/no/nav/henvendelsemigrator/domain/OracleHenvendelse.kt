@@ -77,14 +77,44 @@ fun Row.toHendelse() = OracleHendelse(
     enhet = this.stringOrNull("enhet"),
     verdi = this.stringOrNull("verdi")
 )
+enum class HendelseType {
+    HENVENDELSE_AVSLUTTET,
+    HENVENDELSE_FERDIGSTILT_UTEN_SVAR,
+    HENVENDELSE_LEST,
+    HENVENDELSE_SLATT_SAMMEN,
+    HENVENDELSE_IKKE_LEST_INNEN_FRIST,
+    HENVENDELSE_IKKE_BESVART_INNEN_FRIST,
+    HENVENDELSE_BESVART,
+    OVERSENDT_JOARK,
+    OVERSENDT_HENVENDESLSESARKIV,
+    GSAK_OPPGAVE_OPPRETTET,
+    GSAK_HENVENDELSE_OPPRETTET,
+    KONTORSPERRET,
+    MARKERT_SOM_FEILSENDT,
+    MARKERT_SOM_HASTEKASSERING,
+    KNYTTET_TIL_SAK,
+    KNYTTET_TIL_TEMA,
+    ENDRET_TEMAGRUPPE;
+//  Hendelser som ikke vil føre til oppdatering.
+//    HENVENDELSE_OPPRETTET,
+//    HENVENDELSE_AVBRUTT,
+//    HENVENDELSE_AUTOMATISK_AVBRUTT,
+//    NOTIFIKASJON_SENDT,
+//    OVERSENDT_DOKMOT,
+//    HENVENDELSE_SLETTET_JOURNALPOST,
+//    HENVENDELSE_SLETTET_VEDLEGG,
+//    SKJEMA_VALGT,
+//    FAKTA_REGISTRERT,
+//    SIGNERT_OG_SENDT_INN,
+}
 
 object HendelseKeys {
-    const val ferdigstiltUtenSvar = "HENVENDELSE_FERDIGSTILT_UTEN_SVAR"
-    const val lest = "HENVENDELSE_LEST"
-    const val feilsendt = "MARKERT_SOM_FEILSENDT"
-    const val kontorsperret = "KONTORSPERRET"
+    val ferdigstiltUtenSvar = HendelseType.HENVENDELSE_FERDIGSTILT_UTEN_SVAR.name
+    val lest = HendelseType.HENVENDELSE_LEST.name
+    val feilsendt = HendelseType.MARKERT_SOM_FEILSENDT.name
+    val kontorsperret = HendelseType.KONTORSPERRET.name
 
-    const val endretTemagruppe = "ENDRET_TEMAGRUPPE"
-    const val knyttetTilTema = "KNYTTET_TIL_TEMA"
-    const val knyttetTilSak = "KNYTTET_TIL_SAK"
+    val endretTemagruppe = HendelseType.ENDRET_TEMAGRUPPE.name
+    val knyttetTilTema = HendelseType.KNYTTET_TIL_TEMA.name
+    val knyttetTilSak = HendelseType.KNYTTET_TIL_SAK.name
 }
