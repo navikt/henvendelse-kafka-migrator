@@ -16,6 +16,7 @@ import java.util.*
 object KafkaUtils {
     const val henvendelseTopic = "personoversikt.henvendelse-henvendelse"
     const val endringsloggTopic = "personoversikt.henvendelse-endringlogg"
+    const val consumerGroupId = "henvendelse-kafka-migrator-consumer"
 
     fun producerConfig(clientId: String, config: Config): Properties {
         val properties = Properties()

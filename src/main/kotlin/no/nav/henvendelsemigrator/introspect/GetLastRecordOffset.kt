@@ -5,13 +5,13 @@ import no.nav.henvendelsemigrator.utils.kafka.KafkaUtils
 import org.apache.kafka.clients.consumer.KafkaConsumer
 import org.apache.kafka.common.TopicPartition
 
-object GetKafkaOffset {
+object GetLastRecordOffset {
     data class Input(val topic: String)
     data class Output(val offset: Long)
 
     class Task(private val config: Config) : IntrospectionTask<Input, Output>(
-        name = "Hent kafka offset",
-        description = "Henter kafka offset for ett gitt topic: ${KafkaUtils.henvendelseTopic}, ${KafkaUtils.endringsloggTopic}",
+        name = "Hent siste record offset",
+        description = "Henter siste record offset for ett gitt topic: ${KafkaUtils.henvendelseTopic}, ${KafkaUtils.endringsloggTopic}",
         inputExample = Input(KafkaUtils.henvendelseTopic)
     ) {
         override fun action(input: Input): Output {

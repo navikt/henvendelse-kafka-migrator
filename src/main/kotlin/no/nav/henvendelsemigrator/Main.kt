@@ -33,7 +33,7 @@ fun runApplication(config: Config) {
         KafkaUtils.producerConfig("henvendelse-kafka-migrator-producer", config)
     )
     val kafkaConsumer = HealthcheckableKafkaConsumer<String, String>(
-        KafkaUtils.consumerConfig("henvendelse-kafka-migrator-consumer", "henvendelse-kafka-migrator-consumer", config)
+        KafkaUtils.consumerConfig(KafkaUtils.consumerGroupId, "henvendelse-kafka-migrator-consumer", config)
     )
     val readExistingHenvendelseIdsTask = ReadExistingHenvendelseIdsTask(henvendelseDb, kafkaProducer)
     val processChangesTask = ProcessChangesTask(
@@ -75,7 +75,9 @@ fun runApplication(config: Config) {
                 )
                 introspectRoutes(
                     ProcessHenvendelseId.Task(processChangesTask),
-                    GetKafkaOffset.Task(config),
+                    GetLastRecordOffset.Task(config),
+                    GetConsumerOffset.Task(config),
+                    SetConsumerOffset.Task(config),
                     ReadKafkaTopic.Task(config),
                     SetLastProcessedHendelse.Task(henvendelseDb)
                 )
