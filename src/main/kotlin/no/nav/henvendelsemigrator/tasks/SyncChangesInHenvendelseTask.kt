@@ -14,7 +14,7 @@ import no.nav.henvendelsemigrator.utils.minutesInMillies
 import org.apache.kafka.clients.producer.KafkaProducer
 import org.apache.kafka.clients.producer.ProducerRecord
 
-data class Hendelse(val id: Long, val henvendelseId: String)
+data class Hendelse(val id: Long, val henvendelseId: String, val type: String)
 
 const val SIST_PROSESSERT_HENDELSE = "SIST_PROSESSERT_HENDELSE"
 
@@ -41,6 +41,16 @@ class SyncChangesInHenvendelseTask(
         while (isRunning()) {
             log.info("Resynkroniserer hendelser")
             val hendelser: List<Hendelse> = hentHenvendelseIderSomSkalSynkroniseres()
+                .distinctBy { it.henvendelseId } // Minimere antall hendelser som skal prosesseres
+                .flatMap { hendelse ->
+                    if (hendelse.type == HendelseType.HENVENDELSE_SLATT_SAMMEN.name) {
+                        hentHenvendelseIderSomKanVarePavirketAvSammenslaing(hendelse)
+                    } else {
+                        listOf(hendelse)
+                    }
+                }
+                .distinctBy { it.henvendelseId } // Fjern evt duplikater som ett resultat av spesialhåndtering ovenfor
+                .sortedBy { it.henvendelseId }
             hendelser.forEach {
                 producer.send(ProducerRecord(KafkaUtils.endringsloggTopic, it.henvendelseId, it.henvendelseId))
                 processed++
@@ -67,7 +77,7 @@ class SyncChangesInHenvendelseTask(
         return executeQuery(
             dataSource = henvendelseDb,
             query = """
-                SELECT hendelse.id, hendelse.henvendelse_id FROM hendelse hendelse
+                SELECT hendelse.id, hendelse.henvendelse_id, hendelse.type FROM hendelse hendelse
                 JOIN henvendelse henvendelse ON (hendelse.henvendelse_id = henvendelse.henvendelse_id)
                 WHERE hendelse.id > ?
                 AND hendelse.type IN ($hendelsetyper)
@@ -79,10 +89,30 @@ class SyncChangesInHenvendelseTask(
                     .map { row ->
                         Hendelse(
                             row.long("id"),
-                            row.string("henvendelse_id")
+                            row.string("henvendelse_id"),
+                            row.string("type")
                         )
                     }
                     .toList()
+            }
+        )
+    }
+
+    private fun hentHenvendelseIderSomKanVarePavirketAvSammenslaing(hendelse: Hendelse): List<Hendelse> {
+        return executeQuery(
+            dataSource = henvendelseDb,
+            query = """
+                SELECT henvendelse_id FROM henvendelse
+                WHERE behandlingskjedeid = (
+                    SELECT behandlingskjedeid FROM henvendelse
+                    WHERE henvendelse_id = ?
+                ) AND status = 'FERDIG'
+            """.trimIndent(),
+            setVars = { stmt -> stmt.setLong(1, hendelse.henvendelseId.toLong()) },
+            process = { rs ->
+                Row(rs).map { row ->
+                    hendelse.copy(henvendelseId = row.long("henvendelse_id").toString())
+                }.toList()
             }
         )
     }
