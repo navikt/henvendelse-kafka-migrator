@@ -8,7 +8,7 @@ import org.apache.kafka.common.TopicPartition
 
 object GetConsumerOffset {
     data class Input(val topic: String)
-    data class Output(val committed: Map<TopicPartition, OffsetAndMetadata>)
+    data class Output(val committed: Map<String, Long>)
 
     class Task(private val config: Config) : IntrospectionTask<Input, Output>(
         name = "Hent consumer offset",
@@ -21,9 +21,11 @@ object GetConsumerOffset {
                 val topicPartitions = consumer.partitionsFor(input.topic)
                     .map { TopicPartition(it.topic(), it.partition()) }
                     .toSet()
-                val committed = consumer
+                val committed: Map<String, Long> = consumer
                     .committed(topicPartitions)
                     .filterValues { it != null }
+                    .mapKeys { "${it.key.topic()}[${it.key.partition()}]" }
+                    .mapValues { it.value.offset() }
                 Output(committed)
             }
         }
