@@ -3,7 +3,6 @@ package no.nav.henvendelsemigrator.introspect
 import no.nav.henvendelsemigrator.Config
 import no.nav.henvendelsemigrator.utils.kafka.KafkaUtils
 import org.apache.kafka.clients.consumer.KafkaConsumer
-import org.apache.kafka.clients.consumer.OffsetAndMetadata
 import org.apache.kafka.common.TopicPartition
 
 object GetConsumerOffset {
