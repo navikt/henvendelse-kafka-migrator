@@ -106,14 +106,19 @@ class ProcessChangesTask(
                         val arkivposter: Map<Long, OracleArkivpost> = hentArkivposter(arkivpostIds)
                         val vedlegg: Map<Long, OracleVedlegg> = hentVedlegg(arkivpostIds)
                         val hendelser: Map<Long, List<OracleHendelse>> = hentHendelser(listOf(henvendelseId))
-                        val sammenslatt = processHenvendelse(
+                        val sammenslatt: Henvendelse = processHenvendelse(
                             henvendelse = henvendelser.first(),
                             hendelser = hendelser[henvendelser.firstOrNull()?.henvendelseId] ?: emptyList(),
                             arkivpost = arkivpostIds.firstOrNull()?.let { arkivposter[it] },
                             vedlegg = arkivpostIds.firstOrNull()?.let { vedlegg[it] },
                             fallbackFnrFraHenvendelseMapping = null
                         )
-                        description = sammenslatt.toJson()
+                        val descriptionMap = mapOf(
+                            "henvendelseId" to sammenslatt.henvendelseId,
+                            "behandlingsId" to sammenslatt.behandlingsId,
+                            "behandlingsKjedeId" to sammenslatt.behandlingskjedeId
+                        )
+                        description = "Prosessert: \n${descriptionMap.toJson()}"
                     }
                     if (description == null) {
                         HealthcheckResult.Error(
