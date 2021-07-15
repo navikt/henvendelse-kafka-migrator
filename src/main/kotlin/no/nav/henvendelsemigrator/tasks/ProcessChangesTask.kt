@@ -293,7 +293,7 @@ class ProcessChangesTask(
     private fun hentAktorFnrMapping(aktorIds: List<String>): Map<String, String> {
         if (aktorIds.isEmpty())return emptyMap()
         return executeQuery(
-            dataSource = henvendelseArkivDb,
+            dataSource = henvendelseDb,
             query = "SELECT aktorid, fnr FROM aktor_fnr_mapping where aktorid in (${paramlist(aktorIds.size)})",
             setVars = { stmt ->
                 aktorIds.forEachIndexed { index, aktorId -> stmt.setString(index + 1, aktorId) }
