@@ -24,7 +24,7 @@ object ReadKafkaTopic {
             val kafkaConsumer = KafkaConsumer<String, String>(KafkaUtils.consumerConfig(null, null, config))
             return kafkaConsumer.use { consumer ->
                 val records = mutableListOf<KafkaRecord>()
-                val topicPartition = TopicPartition(KafkaUtils.henvendelseTopic, 0)
+                val topicPartition = TopicPartition(input.topic, 0)
                 val fromOffset = java.lang.Long.max(0, input.fromOffset)
 
                 consumer.assign(listOf(topicPartition))
