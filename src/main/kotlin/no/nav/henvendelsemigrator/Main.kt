@@ -35,6 +35,7 @@ fun runApplication(config: Config) {
     val kafkaConsumer = HealthcheckableKafkaConsumer<String, String>(
         KafkaUtils.consumerConfig(KafkaUtils.consumerGroupId, "henvendelse-kafka-migrator-consumer", config)
     )
+    val setupMigrationTable = SetupMigrationTableTask(henvendelseDb)
     val readExistingHenvendelseIdsTask = ReadExistingHenvendelseIdsTask(henvendelseDb, kafkaProducer)
     val processChangesTask = ProcessChangesTask(
         autoStart = false,
@@ -51,6 +52,7 @@ fun runApplication(config: Config) {
         kafkaConsumer,
         kafkaProducer.toHealthcheck(KafkaUtils.endringsloggTopic),
         kafkaProducer.toHealthcheck(KafkaUtils.henvendelseTopic),
+        setupMigrationTable.toHealtchCheck(),
         readExistingHenvendelseIdsTask.toHealtchCheck(),
         processChangesTask.toHealtchCheck(),
         syncChangesInHenvendelseTask.toHealtchCheck()
@@ -69,6 +71,7 @@ fun runApplication(config: Config) {
                     defaultResource("index.html", "webapp")
                 }
                 taskRoutes(
+                    setupMigrationTable,
                     readExistingHenvendelseIdsTask,
                     syncChangesInHenvendelseTask,
                     processChangesTask

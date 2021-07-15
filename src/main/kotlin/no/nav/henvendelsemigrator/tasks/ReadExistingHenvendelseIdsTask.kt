@@ -14,7 +14,7 @@ class ReadExistingHenvendelseIdsTask(
     val henvendelseDb: HealthcheckedDataSource,
     val producer: KafkaProducer<String, String>
 ) : SimpleTask() {
-    override val name: String = "Fase 1 - Les eksisterende" // requireNotNull(ReadExistingHenvendelseIdsTask::class.simpleName)
+    override val name: String = "Fase 1 - Les eksisterende"
     override val description: String = """
         Leser alle relevante henvendelse_ider fra henvendelseDB og legg til henvendelse_endringslogg. 
     """.trimIndent()
