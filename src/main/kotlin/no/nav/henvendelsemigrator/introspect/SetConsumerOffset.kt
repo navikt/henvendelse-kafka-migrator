@@ -12,7 +12,7 @@ object SetConsumerOffset {
     class Task(private val config: Config) : IntrospectionTask<Input, Output>(
         name = "Sett consumer offset",
         description = "Sett consumer offset for ett gitt topic: ${KafkaUtils.endringsloggTopic}",
-        inputExample = Input(KafkaUtils.henvendelseTopic, 0)
+        inputExample = Input(KafkaUtils.endringsloggTopic, 0)
     ) {
         override fun action(input: Input): Output {
             val kafkaConsumer = KafkaConsumer<String, String>(KafkaUtils.consumerConfig(KafkaUtils.consumerGroupId, null, config))
