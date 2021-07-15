@@ -15,9 +15,9 @@ object ForceSyncUser {
     data class Output(val antall: Int, val prosessert: List<Long>)
 
     class Task(
-        val henvendelseDb: HealthcheckedDataSource,
-        val processor: ProcessChangesTask,
-        val kafka: KafkaProducer<String, String>
+        private val henvendelseDb: HealthcheckedDataSource,
+        private val processor: ProcessChangesTask,
+        private val kafka: KafkaProducer<String, String>
     ) : IntrospectionTask<Input, Output>(
         name = "Synkroniser bruker",
         description = "Henter alle henvendelser for bruker, prosesserer disse og legger de på kafka",
