@@ -29,6 +29,7 @@ data class DbConfig(
             return Files.readAllLines(path).joinToString("\n")
         }
     }
+    
 }
 
 sealed class HealthcheckedDataSource {
