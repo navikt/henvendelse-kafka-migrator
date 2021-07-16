@@ -54,8 +54,8 @@ fun runApplication(config: Config) {
         kafkaProducer.toHealthcheck(KafkaUtils.henvendelseTopic),
         setupMigrationTable.toHealtchCheck(),
         readExistingHenvendelseIdsTask.toHealtchCheck(),
-        processChangesTask.toHealtchCheck(),
-        syncChangesInHenvendelseTask.toHealtchCheck()
+        syncChangesInHenvendelseTask.toHealtchCheck(),
+        processChangesTask.toHealtchCheck()
     )
 
     HttpServer.create(appname, 7075) { state ->
