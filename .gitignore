@@ -1,0 +1,16 @@
+# Idea project files
+*.iml
+.idea/
+
+# Gradle files
+build/
+out/
+.gradle/
+
+
+# Docker-compose persistent data
+kafkadata/
+pgdata_henvendelse/
+pgdata_henvendelsearkiv/
+
+.DS_Store

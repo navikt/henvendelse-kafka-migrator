@@ -1,0 +1,37 @@
+name: Setup kafka topics
+
+on:
+  push:
+    paths:
+      - '.github/workflows/topics.yaml'
+      - '.nais/topics.yaml'
+
+env:
+  CI: true
+  TZ: Europe/Oslo
+
+jobs:
+  setup-topics:
+    name: Setup henvendelse topic
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - name: Setup preprod
+        if: github.ref == 'refs/heads/dev'
+        uses: nais/deploy/actions/deploy@v1
+        env:
+          APIKEY: ${{ secrets.NAIS_DEPLOY_APIKEY }}
+          PRINT_PAYLOAD: true
+          CLUSTER: dev-gcp
+          RESOURCE: .nais/topics.yaml
+          VARS: .nais/vars/preprod.yaml
+      - name: Setup prod
+        if: github.ref == 'refs/heads/master'
+        uses: nais/deploy/actions/deploy@v1
+        env:
+          APIKEY: ${{ secrets.NAIS_DEPLOY_APIKEY }}
+          PRINT_PAYLOAD: true
+          CLUSTER: prod-gcp
+          RESOURCE: .nais/topics.yaml
+          VARS: .nais/vars/prod.yaml
+          DRY_RUN: true

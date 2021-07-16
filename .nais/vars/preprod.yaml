@@ -1,0 +1,10 @@
+domene: "app-q0.adeo.no"
+environment: "q0"
+kafka:
+  pool: "nav-dev"
+  removeDataWhenDeleted: "true"
+secrets:
+  env: "dev"
+  namespace: "_q0"
+security:
+  jwksUrl: "https://isso-q.adeo.no/isso/oauth2/connect/jwk_uri"
