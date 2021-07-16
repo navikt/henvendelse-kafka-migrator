@@ -24,7 +24,7 @@ class SetupMigrationTableTask(
                     CREATE TABLE migreringmetadata(
                         key VARCHAR(50),
                         value VARCHAR(50)
-                    );
+                    )
                     """.trimIndent()
                 )
                 val insertDefaultValues = connection.prepareStatement(
@@ -32,12 +32,14 @@ class SetupMigrationTableTask(
                     insert into migreringmetadata values (
                         'SIST_PROSESSERT_HENDELSE',
                         '9223372036854775807'
-                    );
+                    )
                     """.trimIndent()
                 )
 
                 createTable.execute()
+                log.info("Tabell opprettet")
                 insertDefaultValues.execute()
+                log.info("Default verdi satt inn")
                 connection.commit()
             }
                 .onSuccess { isDone = true }
