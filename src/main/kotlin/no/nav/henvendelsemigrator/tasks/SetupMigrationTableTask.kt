@@ -4,6 +4,7 @@ import kotliquery.using
 import no.nav.henvendelsemigrator.infrastructure.HealthcheckedDataSource
 import no.nav.henvendelsemigrator.infrastructure.health.Healthcheck
 import no.nav.henvendelsemigrator.infrastructure.health.HealthcheckResult
+import no.nav.henvendelsemigrator.log
 
 class SetupMigrationTableTask(
     val henvendelseDb: HealthcheckedDataSource
@@ -40,7 +41,10 @@ class SetupMigrationTableTask(
                 connection.commit()
             }
                 .onSuccess { isDone = true }
-                .onFailure { errored = true }
+                .onFailure {
+                    errored = true
+                    log.error("Failed to run $name", it)
+                }
             println("$name is done")
         }
     }
