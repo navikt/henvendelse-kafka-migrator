@@ -35,7 +35,7 @@ async function createHealthchecksView() {
             check.append(el('pre', { className: 'description' }, description));
         }
         container.append(check);
-    })
+    });
 }
 
 function autogrow(element) {
