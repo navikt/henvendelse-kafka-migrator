@@ -49,13 +49,13 @@ class SyncChangesInHenvendelseTask(
                         listOf(hendelse)
                     }
                 }
+                .sortedByDescending { it.id } // Sorterer listen på nytt slik at `distinctBy` beholder de største elementene
                 .distinctBy { it.henvendelseId } // Fjern evt duplikater som ett resultat av spesialhåndtering ovenfor
-                .sortedBy { it.henvendelseId }
             hendelser.forEach {
                 producer.send(ProducerRecord(KafkaUtils.endringsloggTopic, it.henvendelseId, it.henvendelseId))
                 processed++
             }
-            val sisteHendelse = hendelser.lastOrNull()
+            val sisteHendelse = hendelser.firstOrNull()
             sisteHendelse?.let { lagreSistLesteHendelse(it) }
             log.info("Synkroniserte ${hendelser.size} hendelser, hvorav siste var $sisteHendelse. Venter ett minutt til neste gang.")
             delay(1.minutesInMillies)
@@ -82,6 +82,7 @@ class SyncChangesInHenvendelseTask(
                 WHERE hendelse.id > ?
                 AND hendelse.type IN ($hendelsetyper)
                 AND henvendelse.type IN ($henvendelsetyper)
+                ORDER BY hendelse.id DESC
             """.trimIndent(),
             setVars = { stmt -> stmt.setLong(1, sistProsesserteHendelse) },
             process = { rs ->
