@@ -1,0 +1,40 @@
+name: Manual deploy
+on:
+  workflow_dispatch:
+    inputs:
+      commit:
+        required: true
+        description: 'Git commit that has previously been built and deployed'
+      cluster:
+        required: true
+        description: 'Cluster to deploy to [dev-fss, prod-fss]'
+
+env:
+  IMAGE: docker.pkg.github.com/${{ github.repository }}/henvendelse-kafka-migrator:${{ github.event.inputs.commit }}
+  CI: true
+  TZ: Europe/Oslo
+
+jobs:
+  deploy:
+    name: "Deploy"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - name: Deploy preprod
+        uses: nais/deploy/actions/deploy@v1
+        if: github.event.inputs.cluster == 'dev-fss'
+        env:
+          APIKEY: ${{ secrets.NAIS_DEPLOY_APIKEY }}
+          PRINT_PAYLOAD: true
+          CLUSTER: dev-fss
+          RESOURCE: .nais/application.yaml
+          VARS: .nais/vars/preprod.yaml
+      - name: Deploy prod
+        uses: nais/deploy/actions/deploy@v1
+        if: github.event.inputs.cluster == 'prod-fss'
+        env:
+          APIKEY: ${{ secrets.NAIS_DEPLOY_APIKEY }}
+          PRINT_PAYLOAD: true
+          CLUSTER: prod-fss
+          RESOURCE: .nais/application.yaml
+          VARS: .nais/vars/prod.yaml
