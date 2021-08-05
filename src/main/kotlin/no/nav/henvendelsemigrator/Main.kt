@@ -1,5 +1,6 @@
 package no.nav.henvendelsemigrator
 
+import dev.nohus.autokonfig.types.BooleanSetting
 import dev.nohus.autokonfig.types.StringSetting
 import io.ktor.http.content.*
 import io.ktor.routing.*
@@ -24,6 +25,8 @@ interface Config {
     val authConfig: AuthConfig
     val kafkaSecurityConfig: (properties: Properties) -> Unit
     val kafkaBrokers: String
+    val autoStartProcessChangesTask: Boolean
+    val autoStartSyncChangesInHenvendelseTask: Boolean
 }
 
 fun runApplication(config: Config) {
@@ -38,14 +41,14 @@ fun runApplication(config: Config) {
     val setupMigrationTable = SetupMigrationTableTask(henvendelseDb)
     val readExistingHenvendelseIdsTask = ReadExistingHenvendelseIdsTask(henvendelseDb, kafkaProducer)
     val processChangesTask = ProcessChangesTask(
-        autoStart = false,
+        autoStart = config.autoStartProcessChangesTask,
         consumer = kafkaConsumer,
         producer = kafkaProducer,
         henvendelseDb = henvendelseDb,
         henvendelseArkivDb = henvendelseArkivDb
     )
     val syncChangesInHenvendelseTask = SyncChangesInHenvendelseTask(
-        autoStart = false,
+        autoStart = config.autoStartSyncChangesInHenvendelseTask,
         henvendelseDb = henvendelseDb,
         producer = kafkaProducer
     )
@@ -100,6 +103,8 @@ class NaisConfig : Config, AutoKonfigAware() {
     override val authConfig: AuthConfig = AuthConfig.JwksUrl(getRequiredProperty("ISSO_JWKS_URL"))
     override val kafkaSecurityConfig: (properties: Properties) -> Unit = KafkaUtils::aivenSecurityConfig
     override val kafkaBrokers by StringSetting()
+    override val autoStartProcessChangesTask by BooleanSetting()
+    override val autoStartSyncChangesInHenvendelseTask by BooleanSetting()
 }
 fun main() {
     val config = NaisConfig()

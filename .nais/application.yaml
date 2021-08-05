@@ -55,3 +55,7 @@ spec:
       value: "{{ environment }}"
     - name: ISSO_JWKS_URL
       value: "{{ security.jwksUrl }}"
+    - name: AUTO_START_PROCESS_CHANGES_TASK
+      value: "{{ tasks.startProcessChanges.autoStart }}"
+    - name: AUTO_START_SYNC_CHANGES_IN_HENVENDELSE_TASK
+      value: "{{ tasks.syncChangesInHenvendelse.autoStart }}"
