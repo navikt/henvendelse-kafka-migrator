@@ -269,7 +269,7 @@ class ProcessChangesTask(
         } else if (vedlegg?.dokument != null) {
             String(vedlegg.dokument)
         } else {
-            throw IllegalStateException("Fant verken behandlingsresultat eller vedlegg")
+            throw IllegalStateException("Fant verken behandlingsresultat eller vedlegg for ${henvendelse.henvendelseId} (${henvendelse.behandlingsId})")
         }
 
         return xmlParser.process(content)
