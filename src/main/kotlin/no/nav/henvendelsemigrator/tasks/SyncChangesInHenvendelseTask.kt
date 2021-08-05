@@ -1,6 +1,7 @@
 package no.nav.henvendelsemigrator.tasks
 
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.runBlocking
 import kotliquery.Row
 import no.nav.henvendelsemigrator.domain.HendelseType
 import no.nav.henvendelsemigrator.domain.HenvendelseType
@@ -19,6 +20,7 @@ data class Hendelse(val id: Long, val henvendelseId: String, val type: String)
 const val SIST_PROSESSERT_HENDELSE = "SIST_PROSESSERT_HENDELSE"
 
 class SyncChangesInHenvendelseTask(
+    autoStart: Boolean,
     val henvendelseDb: HealthcheckedDataSource,
     val producer: KafkaProducer<String, String>
 ) : SimpleTask() {
@@ -36,6 +38,14 @@ class SyncChangesInHenvendelseTask(
     private val hendelsetyper = HendelseType
         .values()
         .joinToString(", ") { "'$it'" }
+
+    init {
+        if (autoStart) {
+            runBlocking {
+                start()
+            }
+        }
+    }
 
     override suspend fun runTask() {
         while (isRunning()) {

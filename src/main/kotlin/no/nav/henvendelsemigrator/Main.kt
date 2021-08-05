@@ -44,7 +44,11 @@ fun runApplication(config: Config) {
         henvendelseDb = henvendelseDb,
         henvendelseArkivDb = henvendelseArkivDb
     )
-    val syncChangesInHenvendelseTask = SyncChangesInHenvendelseTask(henvendelseDb, kafkaProducer)
+    val syncChangesInHenvendelseTask = SyncChangesInHenvendelseTask(
+        autoStart = false,
+        henvendelseDb = henvendelseDb,
+        producer = kafkaProducer
+    )
 
     val healthchecks: List<Healthcheck> = listOf(
         henvendelseDb.toHealthcheck("henvendelse"),
