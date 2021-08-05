@@ -24,6 +24,8 @@ class LocalConfig : Config, AutoKonfigAware() {
     override val authConfig: AuthConfig = AuthConfig.UseMock("Z999999")
     override val kafkaSecurityConfig: (properties: Properties) -> Unit = {}
     override val kafkaBrokers = "localhost:9092"
+    override val autoStartProcessChangesTask: Boolean = false
+    override val autoStartSyncChangesInHenvendelseTask: Boolean = false
 }
 
 fun main() {

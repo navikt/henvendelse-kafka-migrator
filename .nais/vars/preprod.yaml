@@ -8,3 +8,9 @@ secrets:
   namespace: "_q0"
 security:
   jwksUrl: "https://isso-q.adeo.no/isso/oauth2/connect/jwk_uri"
+
+tasks:
+  startProcessChanges:
+    autoStart: "false"
+  syncChangesInHenvendelse:
+    autoStart: "false"
