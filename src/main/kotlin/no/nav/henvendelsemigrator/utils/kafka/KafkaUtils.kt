@@ -38,7 +38,7 @@ object KafkaUtils {
         properties[ConsumerConfig.AUTO_OFFSET_RESET_CONFIG] = "earliest"
         properties[ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG] = false
         properties[ConsumerConfig.MAX_POLL_RECORDS_CONFIG] = 1000
-        properties[ConsumerConfig.MAX_POLL_INTERVAL_MS_CONFIG] = 1000 * 1500
+        properties[ConsumerConfig.MAX_POLL_INTERVAL_MS_CONFIG] = 60_000
         groupId?.also { properties[ConsumerConfig.GROUP_ID_CONFIG] = it }
         clientId?.also { properties[ConsumerConfig.CLIENT_ID_CONFIG] = it }
         properties[CommonClientConfigs.BOOTSTRAP_SERVERS_CONFIG] = config.kafkaBrokers
