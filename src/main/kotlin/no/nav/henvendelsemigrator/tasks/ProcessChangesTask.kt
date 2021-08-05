@@ -269,7 +269,12 @@ class ProcessChangesTask(
         } else if (vedlegg?.dokument != null) {
             String(vedlegg.dokument)
         } else {
-            throw IllegalStateException("Fant verken behandlingsresultat eller vedlegg for ${henvendelse.henvendelseId} (${henvendelse.behandlingsId})")
+            log.warn("""
+                [OBS] Fant verken behandlingsresultat eller vedlegg for ${henvendelse.henvendelseId} (${henvendelse.behandlingsId})
+                Disse henvendelsene bør undersøkes manuelt, da dette ikke i teorien skal være mulig.
+                Mistenkt årsak til problemet skyldes manuell kassering av henvendelser
+            """.trimIndent())
+            return null
         }
 
         return xmlParser.process(content)
