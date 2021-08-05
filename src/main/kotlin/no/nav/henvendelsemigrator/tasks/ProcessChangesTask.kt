@@ -55,7 +55,7 @@ class ProcessChangesTask(
             process = GlobalScope.launch {
                 consumer.subscribe(listOf(KafkaUtils.endringsloggTopic))
                 while (isRunning()) {
-                    val records: ConsumerRecords<String, String> = consumer.poll(Duration.ofMillis(10_000))
+                    val records: ConsumerRecords<String, String> = consumer.poll(Duration.ofSeconds(30))
                     log.info("Polled records from kafka, got ${records.count()} record(s).")
                     val start = System.currentTimeMillis()
                     process(records)
