@@ -21,6 +21,7 @@ import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.ZonedDateTime
 
+class NeedsToWait(val durationInMs: Long) : Exception()
 class ProcessChangesTask(
     autoStart: Boolean,
     private val consumer: KafkaConsumer<String, String>,
@@ -58,10 +59,21 @@ class ProcessChangesTask(
                     val records: ConsumerRecords<String, String> = consumer.poll(Duration.ofSeconds(30))
                     log.info("Polled records from kafka, got ${records.count()} record(s).")
                     val start = System.currentTimeMillis()
-                    process(records)
-                    consumer.commitSync()
-                    log.info("Processed ${records.count()} records in ${System.currentTimeMillis() - start}ms")
-                    processed += records.count()
+
+                    var retry: Int = -1
+                    do {
+                        try {
+                            process(records)
+                            consumer.commitSync()
+                            log.info("Processed ${records.count()} records in ${System.currentTimeMillis() - start}ms")
+                            processed += records.count()
+                            retry = -1
+                        } catch (e: NeedsToWait) {
+                            log.info("Retrying to process records in ${e.durationInMs}ms")
+                            delay(e.durationInMs)
+                            retry++
+                        }
+                    } while (retry > -1 && retry < 4)
                 }
                 consumer.unsubscribe()
                 log.info("Stopped task $name")
@@ -177,6 +189,20 @@ class ProcessChangesTask(
         vedlegg: OracleVedlegg?,
         fallbackFnrFraHenvendelseMapping: String?
     ): Henvendelse {
+        val erMerketForHastekassering = hendelser.any { it.type == HendelseType.MARKERT_SOM_HASTEKASSERING.name }
+        val erKassertIArkiv = arkivpost == null || arkivpost.status == "KASSERT"
+        if (erMerketForHastekassering && !erKassertIArkiv) {
+            log.warn(
+                """
+                Fant henvendelse (${henvendelse.henvendelseId}) merket for haste-kassering som ikke har blitt kassert i henvendelsesarkiv.
+                Arkivet kjører kassering hvert 5. minutt.
+                Vi venter 2 minutter før vi forsøker å rekjøre chunken.
+                """.trimIndent()
+            )
+
+            throw NeedsToWait(Duration.ofMinutes(2).toMillis())
+        }
+
         val hendelsemap = hendelser.groupBy { it.type }
         val melding = lagMelding(henvendelse, arkivpost, vedlegg)
         val tilknyttning: OracleHendelse? =
@@ -269,11 +295,13 @@ class ProcessChangesTask(
         } else if (vedlegg?.dokument != null) {
             String(vedlegg.dokument)
         } else {
-            log.warn("""
+            log.warn(
+                """
                 [OBS] Fant verken behandlingsresultat eller vedlegg for ${henvendelse.henvendelseId} (${henvendelse.behandlingsId})
                 Disse henvendelsene bør undersøkes manuelt, da dette ikke i teorien skal være mulig.
                 Mistenkt årsak til problemet skyldes manuell kassering av henvendelser
-            """.trimIndent())
+                """.trimIndent()
+            )
             return null
         }
 
