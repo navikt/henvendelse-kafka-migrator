@@ -11,6 +11,7 @@ import org.apache.kafka.clients.producer.ProducerConfig
 import org.apache.kafka.common.config.SslConfigs
 import org.apache.kafka.common.serialization.StringDeserializer
 import org.apache.kafka.common.serialization.StringSerializer
+import java.time.Duration
 import java.util.*
 
 object KafkaUtils {
@@ -38,7 +39,7 @@ object KafkaUtils {
         properties[ConsumerConfig.AUTO_OFFSET_RESET_CONFIG] = "earliest"
         properties[ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG] = false
         properties[ConsumerConfig.MAX_POLL_RECORDS_CONFIG] = 1000
-        properties[ConsumerConfig.MAX_POLL_INTERVAL_MS_CONFIG] = 60_000
+        properties[ConsumerConfig.MAX_POLL_INTERVAL_MS_CONFIG] = Duration.ofMinutes(10).toMillis().toInt()
         groupId?.also { properties[ConsumerConfig.GROUP_ID_CONFIG] = it }
         clientId?.also { properties[ConsumerConfig.CLIENT_ID_CONFIG] = it }
         properties[CommonClientConfigs.BOOTSTRAP_SERVERS_CONFIG] = config.kafkaBrokers
