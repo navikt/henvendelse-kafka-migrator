@@ -90,7 +90,8 @@ fun runApplication(config: Config) {
                     SetConsumerOffset.Task(config),
                     ReadKafkaTopic.Task(config),
                     SetLastProcessedHendelse.Task(henvendelseDb),
-                    ForceSyncUser.Task(henvendelseDb, processChangesTask, kafkaProducer)
+                    ForceSyncUser.Task(henvendelseDb, processChangesTask, kafkaProducer),
+                    ForceSyncHenvendelseId.Task(processChangesTask, kafkaProducer)
                 )
             }
         }
