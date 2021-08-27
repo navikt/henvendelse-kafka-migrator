@@ -12,13 +12,24 @@ object ReadKafkaTopic {
     data class Input(
         val topic: String,
         val maxRecords: Int,
-        val fromOffset: Long
+        val fromOffset: Long,
+        val filter: Map<String, String?>?,
     )
 
     class Task(private val config: Config) : IntrospectionTask<Input, List<KafkaRecord>>(
         name = "Les meldinger fra kafka",
         description = "Leser meldinger fra kafka topics: ${KafkaUtils.henvendelseTopic}, ${KafkaUtils.endringsloggTopic}",
-        inputExample = Input(KafkaUtils.henvendelseTopic, 10, 100)
+        inputExample = Input(
+            topic = KafkaUtils.henvendelseTopic,
+            maxRecords = 10,
+            fromOffset = 100,
+            filter = mapOf(
+                "aktorId" to null,
+                "fnr" to null,
+                "behandlingskjedeId" to null,
+                "behandlingsId" to null
+            )
+        )
     ) {
         override fun action(input: Input): List<KafkaRecord> {
             val kafkaConsumer = KafkaConsumer<String, String>(KafkaUtils.consumerConfig(null, null, config))
@@ -35,8 +46,8 @@ object ReadKafkaTopic {
                     if (consumerRecords.isEmpty) {
                         break
                     }
-                    records.addAll(
-                        consumerRecords.map {
+                    consumerRecords
+                        .map {
                             KafkaRecord(
                                 timestamp = it.timestamp(),
                                 offset = it.offset(),
@@ -44,12 +55,37 @@ object ReadKafkaTopic {
                                 value = it.value().fromJson<Map<String, Any?>>()
                             )
                         }
-                    )
+                        .filter(matches(input.filter))
+                        .let { records.addAll(it) }
                 }
                 if (records.size > input.maxRecords) {
                     records.subList(0, input.maxRecords)
                 } else {
                     records
+                }
+            }
+        }
+
+        companion object {
+            private fun matches(filter: Map<String, String?>?): (KafkaRecord) -> Boolean {
+                val predicates: List<(KafkaRecord) -> Boolean> = (filter ?: emptyMap())
+                    .entries
+                    .mapNotNull { entry ->
+                        val attribute: String = entry.key
+                        val expectedValue: String? = entry.value
+                        predicate(expectedValue, attribute)
+                    }
+
+                return { kafkaRecord -> predicates.all { it(kafkaRecord) } }
+            }
+
+            private fun predicate(expectedValue: String?, jsonProperty: String): ((KafkaRecord) -> Boolean)? {
+                if (expectedValue == null) return null
+                return { kafkaRecord ->
+                    when (val value = kafkaRecord.value) {
+                        is Map<*, *> -> value[jsonProperty] == expectedValue
+                        else -> false
+                    }
                 }
             }
         }
