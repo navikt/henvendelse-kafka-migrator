@@ -25,7 +25,7 @@ object ReadKafkaTopic {
             topic = KafkaUtils.henvendelseTopic,
             maxRecords = 10,
             fromOffset = 100,
-            toOffset = Long.MAX_VALUE - 1,
+            toOffset = 9007199254740991L,
             filter = mapOf(
                 "aktorId" to null,
                 "fnr" to null,
