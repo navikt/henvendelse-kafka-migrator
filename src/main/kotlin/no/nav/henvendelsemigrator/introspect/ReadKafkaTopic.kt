@@ -1,6 +1,7 @@
 package no.nav.henvendelsemigrator.introspect
 
 import no.nav.henvendelsemigrator.Config
+import no.nav.henvendelsemigrator.log
 import no.nav.henvendelsemigrator.utils.fromJson
 import no.nav.henvendelsemigrator.utils.kafka.KafkaUtils
 import org.apache.kafka.clients.consumer.KafkaConsumer
@@ -13,6 +14,7 @@ object ReadKafkaTopic {
         val topic: String,
         val maxRecords: Int,
         val fromOffset: Long,
+        val toOffset: Long,
         val filter: Map<String, String?>?,
     )
 
@@ -23,6 +25,7 @@ object ReadKafkaTopic {
             topic = KafkaUtils.henvendelseTopic,
             maxRecords = 10,
             fromOffset = 100,
+            toOffset = Long.MAX_VALUE - 1,
             filter = mapOf(
                 "aktorId" to null,
                 "fnr" to null,
@@ -37,6 +40,7 @@ object ReadKafkaTopic {
                 val records = mutableListOf<KafkaRecord>()
                 val topicPartition = TopicPartition(input.topic, 0)
                 val fromOffset = java.lang.Long.max(0, input.fromOffset)
+                val toOffset = java.lang.Long.max(0, input.toOffset)
 
                 consumer.assign(listOf(topicPartition))
                 consumer.seek(topicPartition, fromOffset)
@@ -57,6 +61,12 @@ object ReadKafkaTopic {
                         }
                         .filter(matches(input.filter))
                         .let { records.addAll(it) }
+                    val currentOffset = consumerRecords.maxOfOrNull { it.offset() } ?: Long.MAX_VALUE
+                    log.info("[ReadKafkaTopic] read ${input.topic}, reached offset $currentOffset")
+                    if (currentOffset > toOffset) {
+                        log.info("[ReadKafkaTopic] reached limit, stopping search")
+                        break
+                    }
                 }
                 if (records.size > input.maxRecords) {
                     records.subList(0, input.maxRecords)
