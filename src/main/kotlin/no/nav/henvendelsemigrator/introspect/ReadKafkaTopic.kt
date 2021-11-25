@@ -15,6 +15,7 @@ object ReadKafkaTopic {
         val maxRecords: Int,
         val fromOffset: Long,
         val toOffset: Long,
+        val keyFilter: String?,
         val filter: Map<String, String?>?,
     )
 
@@ -26,6 +27,7 @@ object ReadKafkaTopic {
             maxRecords = 10,
             fromOffset = 100,
             toOffset = 9007199254740991L,
+            keyFilter = null,
             filter = mapOf(
                 "aktorId" to null,
                 "fnr" to null,
@@ -51,6 +53,7 @@ object ReadKafkaTopic {
                         break
                     }
                     consumerRecords
+                        .filter { input.keyFilter == null || input.keyFilter == it.key() }
                         .map {
                             KafkaRecord(
                                 timestamp = it.timestamp(),
