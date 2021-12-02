@@ -88,6 +88,10 @@ class ProcessChangesTask(
         process = null
     }
 
+    override suspend fun reset() {
+        processed = 0
+    }
+
     override fun isRunning(): Boolean = process != null
 
     override fun status() = TaskStatus(

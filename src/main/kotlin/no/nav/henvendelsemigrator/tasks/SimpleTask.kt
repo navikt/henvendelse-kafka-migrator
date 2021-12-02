@@ -10,7 +10,6 @@ abstract class SimpleTask : Task {
     protected var endTime: LocalDateTime? = null
 
     abstract suspend fun runTask()
-    abstract suspend fun reset()
     override suspend fun start() {
         if (process != null) throw IllegalStateException("Task $name is already running")
         val healthcheck = this.toHealtchCheck().check()

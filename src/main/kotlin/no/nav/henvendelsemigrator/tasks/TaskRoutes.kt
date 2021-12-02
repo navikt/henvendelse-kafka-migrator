@@ -13,6 +13,7 @@ interface Task {
     val description: String
     suspend fun start()
     suspend fun stop()
+    suspend fun reset()
     fun isRunning(): Boolean
     fun status(): TaskStatus
     fun toHealtchCheck(): Healthcheck
@@ -53,6 +54,17 @@ fun Route.taskRoutes(vararg tasks: Task) {
                         else -> {
                             task.stop()
                             call.respond(HttpStatusCode.OK, "Stopped task '$taskId'")
+                        }
+                    }
+                }
+
+                post("reset") {
+                    val taskId = requireNotNull(call.parameters["taskid"])
+                    when (val task = taskmap[taskId]) {
+                        null -> call.respond(HttpStatusCode.NotFound, "Task not found '$taskId'")
+                        else -> {
+                            task.reset()
+                            call.respond(HttpStatusCode.OK, "Resetting processed counter: $taskId'")
                         }
                     }
                 }
