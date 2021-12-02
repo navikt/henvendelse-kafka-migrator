@@ -48,3 +48,6 @@ spec:
     - team: teamnks
       application: sf-henvendelse-kafka
       access: read
+    - team: teamnks
+      application: sf-arkiv-dokumentasjon
+      access: read
