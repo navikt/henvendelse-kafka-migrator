@@ -126,7 +126,8 @@ function renderTask(taskstatus) {
     const buttons = el('div', {}, [
         el('button', { className: 'task-action', 'data-taskname': taskstatus.name.replaceAll(' ',''), 'data-action': 'start', [taskstatus.isRunning ? 'disabled' : 'na']: true }, 'Start'),
         el('button', { className: 'task-action', 'data-taskname': taskstatus.name.replaceAll(' ',''), 'data-action': 'stop', [!taskstatus.isRunning ? 'disabled' : 'na']: true }, 'Stopp'),
-        el('button', { className: 'task-action', 'data-taskname': taskstatus.name.replaceAll(' ',''), 'data-action': 'refresh' }, 'Oppdater status')
+        el('button', { className: 'task-action', 'data-taskname': taskstatus.name.replaceAll(' ',''), 'data-action': 'refresh' }, 'Oppdater status'),
+        el('button', { className: 'task-action', 'data-taskname': taskstatus.name.replaceAll(' ',''), 'data-action': 'reset' }, 'Reset'),
     ]);
     task.appendChild(status);
     task.appendChild(time);
@@ -153,6 +154,11 @@ function addTaskActionListeners() {
             renderTask(taskstatus);
         },
         refresh: async (task) => {
+            const taskstatus = await fetch(`/henvendelse-kafka-migrator/task/${task}/status`).then(resp => resp.json());
+            renderTask(taskstatus);
+        },
+        reset: async (task) => {
+            await fetch(`/henvendelse-kafka-migrator/task/${task}/reset`, { method: 'POST', credentials: 'include' });
             const taskstatus = await fetch(`/henvendelse-kafka-migrator/task/${task}/status`).then(resp => resp.json());
             renderTask(taskstatus);
         }
