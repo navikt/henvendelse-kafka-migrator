@@ -6,13 +6,14 @@ import com.auth0.jwt.JWT
 import com.auth0.jwt.impl.JWTParser
 import com.auth0.jwt.interfaces.DecodedJWT
 import com.auth0.jwt.interfaces.Payload
-import io.ktor.application.ApplicationCall
+import io.ktor.application.*
 import io.ktor.auth.Authentication
 import io.ktor.auth.Principal
 import io.ktor.auth.jwt.JWTCredential
 import io.ktor.auth.jwt.jwt
 import io.ktor.http.auth.HttpAuthHeader
 import no.nav.henvendelsemigrator.log
+import no.nav.henvendelsemigrator.utils.EnvUtils
 import java.net.URL
 import java.util.*
 import java.util.concurrent.TimeUnit
@@ -35,6 +36,7 @@ fun Authentication.Configuration.setupJWT(jwksUrl: String) {
 object Security {
     private const val invalidJWT = "Invalid JWT"
     private const val cookieName = "modia_ID_token"
+    private val adminUsers = EnvUtils.getRequiredProperty("ADMIN_USERS").split(",")
 
     fun getSubject(call: ApplicationCall): String {
         return try {
@@ -65,8 +67,13 @@ object Security {
 
     internal fun validateJWT(credentials: JWTCredential): Principal? {
         return try {
+            val subject = credentials.payload.subject
             requireNotNull(credentials.payload.audience) { "Audience not present" }
-            SubjectPrincipal(credentials.payload.subject)
+            require(adminUsers.contains(subject)) {
+                "Subject ($subject) must be in admin list"
+            }
+
+            SubjectPrincipal(subject)
         } catch (e: Exception) {
             log.error("Failed to validateJWT token", e)
             null
