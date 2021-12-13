@@ -59,3 +59,5 @@ spec:
       value: "{{ tasks.startProcessChanges.autoStart }}"
     - name: AUTO_START_SYNC_CHANGES_IN_HENVENDELSE_TASK
       value: "{{ tasks.syncChangesInHenvendelse.autoStart }}"
+    - name: ADMIN_USERS
+      value: "{{ security.adminUsers }}"

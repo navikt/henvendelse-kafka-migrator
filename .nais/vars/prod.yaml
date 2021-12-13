@@ -8,6 +8,7 @@ secrets:
   namespace: ""
 security:
   jwksUrl: "https://isso.adeo.no/isso/oauth2/connect/jwk_uri"
+  adminUsers: "U143410"
 
 tasks:
   startProcessChanges:
