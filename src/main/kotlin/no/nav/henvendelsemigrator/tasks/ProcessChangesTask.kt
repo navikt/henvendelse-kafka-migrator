@@ -65,7 +65,8 @@ class ProcessChangesTask(
                         try {
                             process(records)
                             consumer.commitSync()
-                            log.info("Processed ${records.count()} records in ${System.currentTimeMillis() - start}ms")
+                            val lastProcessedOffset = records.lastOrNull()?.offset()
+                            log.info("Processed ${records.count()} records in ${System.currentTimeMillis() - start}ms. Offset: $lastProcessedOffset")
                             processed += records.count()
                             retry = -1
                         } catch (e: NeedsToWait) {
