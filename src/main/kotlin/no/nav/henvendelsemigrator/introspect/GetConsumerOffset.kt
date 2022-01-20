@@ -2,6 +2,7 @@ package no.nav.henvendelsemigrator.introspect
 
 import no.nav.henvendelsemigrator.Config
 import no.nav.henvendelsemigrator.utils.kafka.KafkaUtils
+import no.nav.henvendelsemigrator.utils.kafka.KafkaUtils.MissingOffsetStrategy
 import org.apache.kafka.clients.consumer.KafkaConsumer
 import org.apache.kafka.common.TopicPartition
 
@@ -15,7 +16,7 @@ object GetConsumerOffset {
         inputExample = Input(KafkaUtils.endringsloggTopic)
     ) {
         override fun action(input: Input): Output {
-            val kafkaConsumer = KafkaConsumer<String, String>(KafkaUtils.consumerConfig(KafkaUtils.consumerGroupId, null, config))
+            val kafkaConsumer = KafkaConsumer<String, String>(KafkaUtils.consumerConfig(KafkaUtils.consumerGroupId, null, MissingOffsetStrategy.THROW_EXCEPTION, config))
             return kafkaConsumer.use { consumer ->
                 val topicPartitions = consumer.partitionsFor(input.topic)
                     .map { TopicPartition(it.topic(), it.partition()) }
