@@ -6,7 +6,6 @@ plugins {
 }
 
 repositories {
-    jcenter()
     mavenCentral()
 }
 
@@ -32,7 +31,7 @@ dependencies {
     implementation("ch.qos.logback:logback-classic:$logbackVersion")
     implementation("net.logstash.logback:logstash-logback-encoder:$logstashVersion")
 
-    implementation("dev.nohus:AutoKonfig:1.0.0")
+    implementation("dev.nohus:AutoKonfig:1.0.3")
     implementation("com.zaxxer:HikariCP:3.2.0")
     implementation("com.oracle.ojdbc:ojdbc8:19.3.0.0")
     implementation("com.github.seratch:kotliquery:1.3.0")
