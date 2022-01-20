@@ -2,6 +2,7 @@ package no.nav.henvendelsemigrator.introspect
 
 import no.nav.henvendelsemigrator.Config
 import no.nav.henvendelsemigrator.utils.kafka.KafkaUtils
+import no.nav.henvendelsemigrator.utils.kafka.KafkaUtils.MissingOffsetStrategy
 import org.apache.kafka.clients.consumer.KafkaConsumer
 import org.apache.kafka.common.TopicPartition
 
@@ -15,7 +16,7 @@ object GetLastRecordOffset {
         inputExample = Input(KafkaUtils.henvendelseTopic)
     ) {
         override fun action(input: Input): Output {
-            val kafkaConsumer = KafkaConsumer<String, String>(KafkaUtils.consumerConfig(null, null, config))
+            val kafkaConsumer = KafkaConsumer<String, String>(KafkaUtils.consumerConfig(null, null, MissingOffsetStrategy.START_AT_BEGINNING,  config))
             return kafkaConsumer.use { consumer ->
                 val topicPartition = TopicPartition(input.topic, 0)
                 consumer.assign(listOf(topicPartition))

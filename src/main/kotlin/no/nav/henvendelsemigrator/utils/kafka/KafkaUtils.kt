@@ -19,6 +19,12 @@ object KafkaUtils {
     const val endringsloggTopic = "personoversikt.henvendelse-endringlogg"
     const val consumerGroupId = "henvendelse-kafka-migrator-consumer"
 
+    enum class MissingOffsetStrategy(val kafkaPropValue: String) {
+        THROW_EXCEPTION("none"),
+        START_AT_BEGINNING("earliest"),
+        CONTINUE_FROM_LATEST("latest")
+    }
+
     fun producerConfig(clientId: String, config: Config): Properties {
         val properties = Properties()
         properties[ProducerConfig.ACKS_CONFIG] = "all"
@@ -34,9 +40,9 @@ object KafkaUtils {
         return properties
     }
 
-    fun consumerConfig(groupId: String?, clientId: String?, config: Config): Properties {
+    fun consumerConfig(groupId: String?, clientId: String?, missingOffsetStrategy: MissingOffsetStrategy, config: Config): Properties {
         val properties = Properties()
-        properties[ConsumerConfig.AUTO_OFFSET_RESET_CONFIG] = if (groupId == null) "earliest" else "none"
+        properties[ConsumerConfig.AUTO_OFFSET_RESET_CONFIG] = missingOffsetStrategy.kafkaPropValue
         properties[ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG] = false
         properties[ConsumerConfig.MAX_POLL_RECORDS_CONFIG] = 1000
         properties[ConsumerConfig.MAX_POLL_INTERVAL_MS_CONFIG] = Duration.ofMinutes(10).toMillis().toInt()

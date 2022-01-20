@@ -12,6 +12,7 @@ import no.nav.henvendelsemigrator.tasks.*
 import no.nav.henvendelsemigrator.utils.EnvUtils.getRequiredProperty
 import no.nav.henvendelsemigrator.utils.kafka.HealthcheckableKafkaConsumer
 import no.nav.henvendelsemigrator.utils.kafka.KafkaUtils
+import no.nav.henvendelsemigrator.utils.kafka.KafkaUtils.MissingOffsetStrategy
 import org.apache.kafka.clients.producer.KafkaProducer
 import org.slf4j.LoggerFactory
 import java.util.*
@@ -36,7 +37,7 @@ fun runApplication(config: Config) {
         KafkaUtils.producerConfig("henvendelse-kafka-migrator-producer", config)
     )
     val kafkaConsumer = HealthcheckableKafkaConsumer<String, String>(
-        KafkaUtils.consumerConfig(KafkaUtils.consumerGroupId, "henvendelse-kafka-migrator-consumer", config)
+        KafkaUtils.consumerConfig(KafkaUtils.consumerGroupId, "henvendelse-kafka-migrator-consumer", MissingOffsetStrategy.THROW_EXCEPTION, config)
     )
     val setupMigrationTable = SetupMigrationTableTask(henvendelseDb)
     val readExistingHenvendelseIdsTask = ReadExistingHenvendelseIdsTask(henvendelseDb, kafkaProducer)

@@ -4,6 +4,7 @@ import no.nav.henvendelsemigrator.Config
 import no.nav.henvendelsemigrator.log
 import no.nav.henvendelsemigrator.utils.fromJson
 import no.nav.henvendelsemigrator.utils.kafka.KafkaUtils
+import no.nav.henvendelsemigrator.utils.kafka.KafkaUtils.MissingOffsetStrategy
 import org.apache.kafka.clients.consumer.KafkaConsumer
 import org.apache.kafka.common.TopicPartition
 import java.time.Duration
@@ -37,7 +38,7 @@ object ReadKafkaTopic {
         )
     ) {
         override fun action(input: Input): List<KafkaRecord> {
-            val kafkaConsumer = KafkaConsumer<String, String>(KafkaUtils.consumerConfig(null, null, config))
+            val kafkaConsumer = KafkaConsumer<String, String>(KafkaUtils.consumerConfig(null, null, MissingOffsetStrategy.START_AT_BEGINNING, config))
             return kafkaConsumer.use { consumer ->
                 val records = mutableListOf<KafkaRecord>()
                 val topicPartition = TopicPartition(input.topic, 0)
