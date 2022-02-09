@@ -269,7 +269,7 @@ class ProcessChangesTask(
             henvendelseIdGsak = henvendelse.henvendelseIdGsak,
             erTilknyttetAnsatt = henvendelse.erTilknyttetAnsatt,
             gjeldendeTemagruppe = temagruppe,
-            journalfortInformasjon = henvendelse.journalpostId?.let {
+            journalfortInformasjon = henvendelse.journalfortTema?.let {
                 JournalfortInformasjon(
                     journalpostId = henvendelse.journalpostId,
                     journalfortTema = henvendelse.journalfortTema,
