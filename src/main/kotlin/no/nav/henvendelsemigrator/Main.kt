@@ -41,6 +41,7 @@ fun runApplication(config: Config) {
     )
     val setupMigrationTable = SetupMigrationTableTask(henvendelseDb)
     val readExistingHenvendelseIdsTask = ReadExistingHenvendelseIdsTask(henvendelseDb, kafkaProducer)
+    val resynkBidHenvendelser = ResyncBIDHenvendelseTask(henvendelseDb, kafkaProducer)
     val processChangesTask = ProcessChangesTask(
         autoStart = config.autoStartProcessChangesTask,
         consumer = kafkaConsumer,
@@ -62,6 +63,7 @@ fun runApplication(config: Config) {
         kafkaProducer.toHealthcheck(KafkaUtils.henvendelseTopic),
         setupMigrationTable.toHealtchCheck(),
         readExistingHenvendelseIdsTask.toHealtchCheck(),
+        resynkBidHenvendelser.toHealtchCheck(),
         syncChangesInHenvendelseTask.toHealtchCheck(),
         processChangesTask.toHealtchCheck()
     )
@@ -82,7 +84,8 @@ fun runApplication(config: Config) {
                     setupMigrationTable,
                     readExistingHenvendelseIdsTask,
                     syncChangesInHenvendelseTask,
-                    processChangesTask
+                    processChangesTask,
+                    resynkBidHenvendelser
                 )
                 introspectRoutes(
                     ProcessHenvendelseId.Task(processChangesTask),
